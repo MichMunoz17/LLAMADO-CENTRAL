@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central - Servicio Inteligente</title>
+    <title>Central W - Servicio Inteligente</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; }
@@ -26,14 +26,14 @@
     
     <div id="loading">
         <div class="loader"></div>
-        <p style="color: #888;">Llamando a tu mesero...</p>
+        <p style="color: #888;">Llamando a tu representante de CW...</p>
     </div>
 
     <div id="success" style="display:none;">
         <div class="success-icon">✓</div>
         <h2 id="msg-t" style="margin:0;">¡SOLICITUD RECIBIDA!</h2>
         <p id="m-info" class="mesa-destaque"></p>
-        <p id="msg-c" style="color: #bbb;">Tu representante de Central va en camino. 🍻</p>
+        <p id="msg-c" style="color: #bbb;">Tu representante de CEntral W va en camino. 🍻</p>
         
         <div class="info-re-scan">
             ¿Necesitas algo más?<br>
@@ -71,7 +71,7 @@
             
             if(ref) { 
                 document.getElementById('msg-t').innerText = "SOLICITUD ACTIVA"; 
-                document.getElementById('msg-c').innerText = "Ya avisamos a tu mesero. ¡No desesperes! 🍻";
+                document.getElementById('msg-c').innerText = "Ya avisamos a tu representante. ¡Ten paciencia mi cabron! 🍻";
                 document.querySelector('.success-icon').style.color = "#444";
             }
         }
