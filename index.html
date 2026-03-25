@@ -8,48 +8,74 @@
     <style>
         :root { --verde: #8cc63f; }
         body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
-        .logo-img { width: 70%; max-width: 250px; margin: 0 auto 20px; }
+        
+        .logo-img { width: 220px; height: auto; margin: 0 auto 20px; display: block; }
+        
         .loader { border: 4px solid #222; border-top: 4px solid var(--verde); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .success-icon { font-size: 4rem; color: var(--verde); display: none; }
+        
+        .success-icon { font-size: 4rem; color: var(--verde); display: none; margin-bottom: 10px; }
+        .mesa-destaque { font-size: 2.2rem; color: var(--verde); font-weight: 900; margin: 5px 0; }
+        
+        .info-re-scan { color: #555; font-size: 0.85rem; margin-top: 25px; padding-top: 15px; border-top: 1px solid #222; width: 80%; margin-left: 10%; }
+        strong { color: var(--verde); }
     </style>
 </head>
 <body>
-    <img src="central-blanco.png" class="logo-img">
-    <div id="loading"><div class="loader"></div><p>Llamando representante...</p></div>
+    <img src="central-blanco.png" alt="Central Wings" class="logo-img">
+    
+    <div id="loading">
+        <div class="loader"></div>
+        <p style="color: #888;">Llamando a tu mesero...</p>
+    </div>
+
     <div id="success" style="display:none;">
         <div class="success-icon">✓</div>
-        <h2 id="msg-t">¡SOLICITUD RECIBIDA!</h2>
-        <p id="m-info" style="font-size: 1.5rem; color: var(--verde); font-weight: bold;"></p>
-        <p id="msg-c">Un representante va en camino. 🍻</p>
+        <h2 id="msg-t" style="margin:0;">¡SOLICITUD RECIBIDA!</h2>
+        <p id="m-info" class="mesa-destaque"></p>
+        <p id="msg-c" style="color: #bbb;">Tu representante de Central va en camino. 🍻</p>
+        
+        <div class="info-re-scan">
+            ¿Necesitas algo más?<br>
+            <strong>Vuelve a escanear el sensor de tu mesa.</strong>
+        </div>
     </div>
 
     <script>
         const m = new URLSearchParams(window.location.search).get('m') || "1";
         const token = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
         const chatId = "-5149661099";
+        
         const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         const canal = ably.channels.get('central-alertas');
 
-        if (!sessionStorage.getItem("alerta_" + m)) {
-            // Enviar a Telegram
+        const yaEnviado = sessionStorage.getItem("alerta_" + m);
+
+        if (!yaEnviado) {
+            // Mandar a Telegram
             fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`);
-            // Enviar al Monitor
+            // Mandar al Monitor
             canal.publish('aviso', { mesa: m });
+            
             sessionStorage.setItem("alerta_" + m, "true");
             mostrar(false);
-        } else { mostrar(true); }
+        } else { 
+            mostrar(true); 
+        }
 
         function mostrar(ref) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('success').style.display = 'block';
             document.querySelector('.success-icon').style.display = 'block';
             document.getElementById('m-info').innerText = "Mesa " + m;
+            
             if(ref) { 
                 document.getElementById('msg-t').innerText = "SOLICITUD ACTIVA"; 
-                document.querySelector('.success-icon').style.color = "#555";
+                document.getElementById('msg-c').innerText = "Ya avisamos a tu mesero. ¡No desesperes! 🍻";
+                document.querySelector('.success-icon').style.color = "#444";
             }
         }
     </script>
 </body>
 </html>
+
