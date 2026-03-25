@@ -10,19 +10,27 @@
         .loader { border: 5px solid #333; border-top: 5px solid #FFD700; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .success-icon { font-size: 4rem; color: #2ecc71; display: none; }
+        .info-re-scan { color: #888; font-size: 0.9rem; margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; }
     </style>
 </head>
 <body>
     <div class="logo">CENTR⭐︎L WINGS</div>
+    
     <div id="loading">
         <p>Llamando a tu mesero...</p>
         <div class="loader"></div>
     </div>
+
     <div id="success" style="display:none;">
         <div class="success-icon">✓</div>
-        <h2>¡SOLICITUD RECIBIDA!</h2>
+        <h2 id="msg-titulo">¡SOLICITUD RECIBIDA!</h2>
         <p id="mesa-info"></p>
-        <p style="color: #bbb;">Tu representante de Central va en camino. 🍻</p>
+        <p id="msg-cuerpo" style="color: #bbb;">Tu representante de Central va en camino. 🍻</p>
+        
+        <div class="info-re-scan">
+            ¿Necesitas algo más?<br>
+            <strong>Vuelve a pasar tu cel por el sensor de la mesa.</strong>
+        </div>
     </div>
 
     <script>
@@ -31,15 +39,35 @@
         const urlParams = new URLSearchParams(window.location.search);
         const m = urlParams.get('m') || "1";
 
-        fetch(`https://api.telegram.org/bot8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo/sendMessage?chat_id=-5149661099&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`)
-            .then(res => {
-                if (res.ok) {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('success').style.display = 'block';
-                    document.querySelector('.success-icon').style.display = 'block';
-                    document.getElementById('mesa-info').innerText = "Mesa " + m + " confirmada.";
-                }
-            });
+        // Revisamos si ya enviamos la alerta en esta sesión
+        const yaEnviado = sessionStorage.getItem("alerta_" + m);
+
+        if (!yaEnviado) {
+            // PRIMERA VEZ: Mandamos mensaje a Telegram
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`)
+                .then(res => {
+                    if (res.ok) {
+                        sessionStorage.setItem("alerta_" + m, "true");
+                        mostrarPantalla(false);
+                    }
+                });
+        } else {
+            // REFRESCÓ LA PÁGINA: No mandamos nada, solo avisamos que ya está pedido
+            mostrarPantalla(true);
+        }
+
+        function mostrarPantalla(esRefresco) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('success').style.display = 'block';
+            document.querySelector('.success-icon').style.display = 'block';
+            document.getElementById('mesa-info').innerText = "Mesa " + m + " confirmada.";
+
+            if (esRefresco) {
+                document.getElementById('msg-titulo').innerText = "SOLICITUD ACTIVA";
+                document.getElementById('msg-cuerpo').innerText = "Ya avisamos al personal. ¡Sé paciente! 🍻";
+                document.querySelector('.success-icon').style.color = "#f39c12"; // Cambia a naranja para indicar "espera"
+            }
+        }
     </script>
 </body>
 </html>
