@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central - Servicio Inteligente</title>
+    <style>
+        body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
+        .logo { font-size: 3rem; font-weight: 900; color: #FFD700; margin-bottom: 10px; }
+        .loader { border: 5px solid #333; border-top: 5px solid #FFD700; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .success-icon { font-size: 4rem; color: #2ecc71; display: none; }
+    </style>
+</head>
+<body>
+    <div class="logo">CENTRAL</div>
+    <div id="loading">
+        <p>Llamando a tu mesero...</p>
+        <div class="loader"></div>
+    </div>
+    <div id="success" style="display:none;">
+        <div class="success-icon">✓</div>
+        <h2>¡SOLICITUD RECIBIDA!</h2>
+        <p id="mesa-info"></p>
+        <p style="color: #bbb;">Tu representante de Central va en camino. 🍻</p>
+    </div>
+
+    <script>
+        const token = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
+        const chatId = "-5149661099";
+        const urlParams = new URLSearchParams(window.location.search);
+        const m = urlParams.get('m') || "1";
+
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN EN CENTRAL 🍗')}`)
+            .then(res => {
+                if (res.ok) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('success').style.display = 'block';
+                    document.querySelector('.success-icon').style.display = 'block';
+                    document.getElementById('mesa-info').innerText = "Mesa " + m + " confirmada.";
+                }
+            });
+    </script>
+</body>
+</html>
