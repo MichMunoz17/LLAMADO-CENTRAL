@@ -3,74 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central Wings - Alerta Inteligente</title>
+    <title>Central - Servicio Inteligente</title>
+    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        /* Usando el color verde de tu logo */
-        :root { --verde-central: #8cc63f; } 
-        
-        body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
-        
-        .logo-img { width: 80%; max-width: 300px; margin: 0 auto 20px; display: block; }
-        
-        .loader { border: 5px solid #222; border-top: 5px solid var(--verde-central); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        :root { --verde: #8cc63f; }
+        body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
+        .logo-img { width: 70%; max-width: 250px; margin: 0 auto 20px; }
+        .loader { border: 4px solid #222; border-top: 4px solid var(--verde); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .success-icon { font-size: 5rem; color: var(--verde-central); display: none; margin-bottom: 10px; }
-        h2 { font-size: 1.8rem; letter-spacing: -1px; }
-        .info-re-scan { color: #666; font-size: 0.8rem; margin-top: 30px; padding: 15px; border-top: 1px solid #222; }
-        strong { color: var(--verde-central); }
+        .success-icon { font-size: 4rem; color: var(--verde); display: none; }
     </style>
 </head>
 <body>
-    <img src="central-blanco.png" alt="Central Wings" class="logo-img">
-    
-    <div id="loading">
-        <p>Llamando a tu representante...</p>
-        <div class="loader"></div>
-    </div>
-
+    <img src="central-blanco.png" class="logo-img">
+    <div id="loading"><div class="loader"></div><p>Llamando mesero...</p></div>
     <div id="success" style="display:none;">
         <div class="success-icon">✓</div>
-        <h2 id="msg-titulo">¡SOLICITUD RECIBIDA!</h2>
-        <p id="mesa-info" style="font-size: 1.5rem; font-weight: bold;"></p>
-        <p id="msg-cuerpo" style="color: #ccc;">Un representante va en camino. 🍻</p>
-        
-        <div class="info-re-scan">
-            ¿Algo más?<br>
-            <strong>Vuelve a escanear el sensor de tu mesa.</strong>
-        </div>
+        <h2 id="msg-t">¡SOLICITUD RECIBIDA!</h2>
+        <p id="m-info" style="font-size: 1.5rem; color: var(--verde); font-weight: bold;"></p>
+        <p id="msg-c">Un representante va en camino. 🍻</p>
     </div>
 
     <script>
+        const m = new URLSearchParams(window.location.search).get('m') || "1";
         const token = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
         const chatId = "-5149661099";
-        const urlParams = new URLSearchParams(window.location.search);
-        const m = urlParams.get('m') || "1";
+        const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
+        const canal = ably.channels.get('central-alertas');
 
-        const yaEnviado = sessionStorage.getItem("alerta_" + m);
+        if (!sessionStorage.getItem("alerta_" + m)) {
+            // Enviar a Telegram
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`);
+            // Enviar al Monitor
+            canal.publish('aviso', { mesa: m });
+            sessionStorage.setItem("alerta_" + m, "true");
+            mostrar(false);
+        } else { mostrar(true); }
 
-        if (!yaEnviado) {
-            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`)
-                .then(res => {
-                    if (res.ok) {
-                        sessionStorage.setItem("alerta_" + m, "true");
-                        mostrarPantalla(false);
-                    }
-                });
-        } else {
-            mostrarPantalla(true);
-        }
-
-        function mostrarPantalla(esRefresco) {
+        function mostrar(ref) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('success').style.display = 'block';
             document.querySelector('.success-icon').style.display = 'block';
-            document.getElementById('mesa-info').innerText = "Mesa " + m;
-
-            if (esRefresco) {
-                document.getElementById('msg-titulo').innerText = "SOLICITUD ACTIVA";
-                document.getElementById('msg-cuerpo').innerText = "Ya avisamos al personal. ¡Ten Paciencia!🍻";
-                document.querySelector('.success-icon').style.color = "#888"; 
+            document.getElementById('m-info').innerText = "Mesa " + m;
+            if(ref) { 
+                document.getElementById('msg-t').innerText = "SOLICITUD ACTIVA"; 
+                document.querySelector('.success-icon').style.color = "#555";
             }
         }
     </script>
