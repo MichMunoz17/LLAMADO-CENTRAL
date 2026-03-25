@@ -31,7 +31,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const m = urlParams.get('m') || "1";
 
-        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN EN CENTRAL 🍗')}`)
+        fetch(`https://api.telegram.org/bot8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo/sendMessage?chat_id=-5149661099&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN EN CENTRAL 🍗')}`)
             .then(res => {
                 if (res.ok) {
                     document.getElementById('loading').style.display = 'none';
