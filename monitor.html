@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>CENTRAL WINGS - MONITOR DE CAJA</title>
+    <title>CENTRAL W - MONITOR</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; }
@@ -53,13 +53,13 @@
             div.innerHTML = `<p class="tiempo">MESA</p><p class="num-mesa">${num}</p><p class="tiempo">HACE UN MOMENTO</p>`;
             document.getElementById('contenedor-alertas').appendChild(div);
 
-            // Auto-limpieza después de 5 minutos (300,000 ms)
+            // Auto-limpieza después de 20 segundos (20,000 ms)
             setTimeout(() => {
                 div.remove();
                 if (document.getElementById('contenedor-alertas').children.length === 0) {
                     document.getElementById('no-hay').style.display = 'block';
                 }
-            }, 300000); 
+            }, 20000); 
         }
     </script>
 </body>
