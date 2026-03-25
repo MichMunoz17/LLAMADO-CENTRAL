@@ -5,31 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Central - Servicio Inteligente</title>
     <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
-        .logo { font-size: 3rem; font-weight: 900; color: #FFD700; margin-bottom: 10px; }
-        .loader { border: 5px solid #333; border-top: 5px solid #FFD700; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
+        /* Usando el color verde de tu logo */
+        :root { --verde-central: #8cc63f; } 
+        
+        body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
+        
+        .logo-img { width: 80%; max-width: 300px; margin: 0 auto 20px; display: block; }
+        
+        .loader { border: 5px solid #222; border-top: 5px solid var(--verde-central); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .success-icon { font-size: 4rem; color: #2ecc71; display: none; }
-        .info-re-scan { color: #888; font-size: 0.9rem; margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; }
+        
+        .success-icon { font-size: 5rem; color: var(--verde-central); display: none; margin-bottom: 10px; }
+        h2 { font-size: 1.8rem; letter-spacing: -1px; }
+        .info-re-scan { color: #666; font-size: 0.8rem; margin-top: 30px; padding: 15px; border-top: 1px solid #222; }
+        strong { color: var(--verde-central); }
     </style>
 </head>
 <body>
-    <div class="logo">CENTR⭐︎L WINGS</div>
+    <img src="central-blanco.png" alt="Central Wings" class="logo-img">
     
     <div id="loading">
-        <p>Llamando a tu mesero...</p>
+        <p>Llamando a tu representante...</p>
         <div class="loader"></div>
     </div>
 
     <div id="success" style="display:none;">
         <div class="success-icon">✓</div>
         <h2 id="msg-titulo">¡SOLICITUD RECIBIDA!</h2>
-        <p id="mesa-info"></p>
-        <p id="msg-cuerpo" style="color: #bbb;">Tu representante de Central va en camino. 🍻</p>
+        <p id="mesa-info" style="font-size: 1.5rem; font-weight: bold;"></p>
+        <p id="msg-cuerpo" style="color: #ccc;">Un representante va en camino. 🍻</p>
         
         <div class="info-re-scan">
-            ¿Necesitas algo más?<br>
-            <strong>Vuelve a pasar tu cel por el sensor de la mesa.</strong>
+            ¿Algo más?<br>
+            <strong>Vuelve a escanear el sensor de tu mesa.</strong>
         </div>
     </div>
 
@@ -39,11 +47,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const m = urlParams.get('m') || "1";
 
-        // Revisamos si ya enviamos la alerta en esta sesión
         const yaEnviado = sessionStorage.getItem("alerta_" + m);
 
         if (!yaEnviado) {
-            // PRIMERA VEZ: Mandamos mensaje a Telegram
             fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`)
                 .then(res => {
                     if (res.ok) {
@@ -52,7 +58,6 @@
                     }
                 });
         } else {
-            // REFRESCÓ LA PÁGINA: No mandamos nada, solo avisamos que ya está pedido
             mostrarPantalla(true);
         }
 
@@ -60,12 +65,12 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('success').style.display = 'block';
             document.querySelector('.success-icon').style.display = 'block';
-            document.getElementById('mesa-info').innerText = "Mesa " + m + " confirmada.";
+            document.getElementById('mesa-info').innerText = "Mesa " + m;
 
             if (esRefresco) {
                 document.getElementById('msg-titulo').innerText = "SOLICITUD ACTIVA";
-                document.getElementById('msg-cuerpo').innerText = "Ya avisamos al personal. ¡Sé paciente! 🍻";
-                document.querySelector('.success-icon').style.color = "#f39c12"; // Cambia a naranja para indicar "espera"
+                document.getElementById('msg-cuerpo').innerText = "Ya avisamos al personal. ¡Ten Paciencia!🍻";
+                document.querySelector('.success-icon').style.color = "#888"; 
             }
         }
     </script>
