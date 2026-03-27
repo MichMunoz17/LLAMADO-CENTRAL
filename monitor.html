@@ -23,10 +23,10 @@
 <body>
     <div class="header">
         <img src="central-blanco.png" class="logo-small">
-        <h1>ALERTAS ACTIVAS</h1>
+        <h1>ALERTAS COMENSALES</h1>
     </div>
 
-    <div id="no-hay">ESPERANDO SOLICITUDES DE ALERTAS...</div>
+    <div id="no-hay">ESPERANDO ALERTAS DE ATENCIÓN...</div>
     <div id="contenedor-alertas"></div>
 
     <audio id="pop" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
@@ -50,7 +50,7 @@
             const div = document.createElement('div');
             div.id = idMesa;
             div.className = 'tarjeta-mesa';
-            div.innerHTML = `<p class="tiempo">MESA</p><p class="num-mesa">${num}</p><p class="tiempo">HACE UN MOMENTO</p>`;
+            div.innerHTML = `<p class="tiempo">ATENCIÓN EN MESA</p><p class="num-mesa">${num}</p><p class="tiempo">HACE UN MOMENTO</p>`;
             document.getElementById('contenedor-alertas').appendChild(div);
 
             // Auto-limpieza después de 20 segundos (20,000 ms)
