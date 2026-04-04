@@ -7,75 +7,69 @@
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; }
-        body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
-        
-        .logo-img { width: 220px; height: auto; margin: 0 auto 20px; display: block; }
-        
+        body { background-color: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .logo-img { width: 200px; margin: 0 auto 20px; display: block; }
         .loader { border: 4px solid #222; border-top: 4px solid var(--verde); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .success-icon { font-size: 4rem; color: var(--verde); display: none; margin-bottom: 10px; }
-        .mesa-destaque { font-size: 2.2rem; color: var(--verde); font-weight: 900; margin: 5px 0; }
-        
-        .info-re-scan { color: #555; font-size: 0.85rem; margin-top: 25px; padding-top: 15px; border-top: 1px solid #222; width: 80%; margin-left: 10%; }
-        strong { color: var(--verde); }
+        #success { display:none; }
+        .m-num { font-size: 2.5rem; color: var(--verde); font-weight: 900; }
     </style>
 </head>
 <body>
-    <img src="central-blanco.png" alt="Central Wings" class="logo-img">
+    <img src="central-blanco.png" class="logo-img">
     
     <div id="loading">
         <div class="loader"></div>
-        <p style="color: #888;">Llamando a tu representante de CW...</p>
+        <p>Llamando a CW...</p>
     </div>
 
-    <div id="success" style="display:none;">
-        <div class="success-icon">✓</div>
-        <h2 id="msg-t" style="margin:0;">¡SOLICITUD RECIBIDA!</h2>
-        <p id="m-info" class="mesa-destaque"></p>
-        <p id="msg-c" style="color: #bbb;">Tu representante de Central W va en camino. 🍻</p>
-        
-        <div class="info-re-scan">
-            ¿Necesitas algo más?<br>
-            <strong>Vuelve a escanear el sensor de tu mesa.</strong>
-        </div>
+    <div id="success">
+        <h2 id="titulo">¡RECIBIDO!</h2>
+        <p id="m-info" class="m-num"></p>
+        <p id="cuerpo">Tu representante va en camino. 🍻</p>
+        <p style="font-size: 0.8rem; color: #444; margin-top: 20px; border-top: 1px solid #222; padding-top: 10px;">
+            ¿Algo más? <strong>Vuelve a escanear.</strong>
+        </p>
     </div>
 
     <script>
-        const m = new URLSearchParams(window.location.search).get('m') || "1";
-        const token = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
-        const chatId = "-5149661099";
+        // Capturamos la mesa rápido
+        const params = new URLSearchParams(window.location.search);
+        const m = params.get('m') || "1";
         
-        const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
-        const canal = ably.channels.get('central-alertas');
+        // Datos de conexión
+        const token = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
+        const cid = "-5149661099";
 
-        const yaEnviado = sessionStorage.getItem("alerta_" + m);
-
-        if (!yaEnviado) {
-            // Mandar a Telegram
-            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`);
-            // Mandar al Monitor
-            canal.publish('aviso', { mesa: m });
-            
-            sessionStorage.setItem("alerta_" + m, "true");
-            mostrar(false);
-        } else { 
-            mostrar(true); 
-        }
-
-        function mostrar(ref) {
+        // Función para mostrar la pantalla de éxito
+        function listo(esRef) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('success').style.display = 'block';
-            document.querySelector('.success-icon').style.display = 'block';
             document.getElementById('m-info').innerText = "Mesa " + m;
-            
-            if(ref) { 
-                document.getElementById('msg-t').innerText = "SOLICITUD ACTIVA"; 
-                document.getElementById('msg-c').innerText = "Ya avisamos a tu representante. ¡Ten paciencia! 🍻";
-                document.querySelector('.success-icon').style.color = "#444";
+            if(esRef) {
+                document.getElementById('titulo').innerText = "ACTIVA";
+                document.getElementById('cuerpo').innerText = "Solicitud ya enviada. ¡Ten paciencia!";
             }
+        }
+
+        // --- LÓGICA DE ENVÍO ---
+        if (!sessionStorage.getItem("a_" + m)) {
+            // 1. Mandar a Telegram (Súper rápido)
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${cid}&text=${encodeURIComponent('🚨 MESA ' + m + ' - SOLICITA ATENCIÓN 🍗')}`)
+            .finally(() => {
+                // 2. Mandar a Ably (Monitor)
+                try {
+                    const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
+                    const chan = ably.channels.get('central-alertas');
+                    chan.publish('aviso', { mesa: m });
+                } catch(e) { console.log("Ably error"); }
+                
+                sessionStorage.setItem("a_" + m, "true");
+                listo(false);
+            });
+        } else {
+            listo(true);
         }
     </script>
 </body>
 </html>
-
