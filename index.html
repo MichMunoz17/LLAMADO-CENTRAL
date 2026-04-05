@@ -3,86 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central W - Servicio Inteligente</title>
-    <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
+    <title>Central - Servicio</title>
     <style>
-        :root { --verde: #8cc63f; }
-        body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        
-        /* El Logo que me pasaste */
-        .logo-img { width: 220px; height: auto; margin: 0 auto 20px; display: block; }
-        
-        /* Animación de carga */
-        .loader { border: 4px solid #222; border-top: 4px solid var(--verde); border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Pantalla de Éxito */
-        .success-icon { font-size: 5rem; color: var(--verde); margin-bottom: 10px; }
-        .m-num { font-size: 2.8rem; color: var(--verde); font-weight: 900; margin: 5px 0; letter-spacing: -2px; }
-        
-        /* Instrucciones al pie */
-        .info-re-scan { color: #555; font-size: 0.85rem; margin-top: 30px; padding-top: 20px; border-top: 1px solid #222; width: 80%; margin-left: 10%; }
-        strong { color: var(--verde); }
-
-        #success { display: none; animation: fadeIn 0.5s; }
+        :root { --v: #8cc63f; }
+        body { background: #000; color: #fff; font-family: 'Arial Black', sans-serif; text-align: center; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; overflow: hidden; }
+        .logo { width: 200px; margin-bottom: 20px; }
+        .loader { border: 4px solid #222; border-top: 4px solid var(--v); border-radius: 50%; width: 40px; height: 40px; animation: s 1s linear infinite; margin: 0 auto; }
+        @keyframes s { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #ok { display: none; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .check { font-size: 5rem; color: var(--v); margin-bottom: 10px; }
+        .m { font-size: 2.5rem; color: var(--v); font-weight: 900; margin: 5px 0; letter-spacing: -1px; }
+        .footer { color: #555; font-size: 0.8rem; margin-top: 25px; padding-top: 15px; border-top: 1px solid #222; width: 80%; margin-left: 10%; font-family: sans-serif; }
+        strong { color: var(--v); }
     </style>
 </head>
 <body>
-    <img src="central-blanco.png" alt="Central Wings" class="logo-img">
+    <img src="central-blanco.png" class="logo">
     
-    <div id="loading">
+    <div id="load">
         <div class="loader"></div>
-        <p style="color: #888; font-weight: bold;">SOLICITANDO REPRESENTANTE...</p>
+        <p style="font-family: sans-serif; color: #888; margin-top: 15px;">SOLICITANDO ATENCIÓN...</p>
     </div>
 
-    <div id="success">
-        <div class="success-icon">✓</div>
-        <h2 id="msg-t" style="margin:0; letter-spacing: -1px;">¡RECIBIDO!</h2>
-        <p id="m-info" class="m-num"></p>
-        <p id="msg-c" style="color: #bbb; font-weight: bold;">Un representante va en camino. 🍻</p>
+    <div id="ok">
+        <div class="check">✓</div>
+        <h2 id="t" style="margin:0;">¡RECIBIDO!</h2>
+        <p id="info" class="m"></p>
+        <p id="c" style="color:#bbb; font-family: sans-serif;">Un representante va en camino. 🍻</p>
         
-        <div class="info-re-scan">
+        <div class="footer">
             ¿Algo más?<br>
             <strong>Vuelve a escanear el sensor de tu mesa.</strong>
         </div>
     </div>
 
     <script>
-        const m = new URLSearchParams(window.location.search).get('m') || "1";
-        const token = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
-        const chatId = "-5149661099";
-        const ablyKey = 'XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo';
-
-        function mostrarExito(esRef) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('success').style.display = 'block';
-            document.getElementById('m-info').innerText = "MESA " + m;
+        const p = new URLSearchParams(window.location.search);
+        const m = p.get('m') || "1";
+        
+        const mostrar = (esRef) => { 
+            document.getElementById('load').style.display='none'; 
+            document.getElementById('ok').style.display='block';
+            document.getElementById('info').innerText = "MESA " + m;
             if(esRef) {
-                document.getElementById('msg-t').innerText = "SOLICITUD ACTIVA";
-                document.getElementById('msg-c').innerText = "Ya avisamos a tu representante. ¡Salud! 🍻";
-                document.querySelector('.success-icon').style.color = "#444";
+                document.getElementById('t').innerText = "SOLICITUD ACTIVA";
+                document.getElementById('c').innerText = "Ya avisamos a tu representante. ¡Ten paciencia! 🍻";
+                document.querySelector('.check').style.color = "#444";
             }
-        }
+        };
 
         if (!sessionStorage.getItem("a_" + m)) {
-            // Mandamos señales de volada
-            const ably = new Ably.Realtime({ key: ablyKey, closeOnUnload: false });
-            const channel = ably.channels.get('central-alertas');
+            const bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
+            const cid = "-5149661099";
+            const ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
 
-            // Disparo gemelo: Telegram y Monitor al mismo tiempo
-            Promise.all([
-                fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent('🚨 MESA ' + m + ' SOLICITA ATENCIÓN 🍗')}`),
-                channel.publish('aviso', { mesa: m })
-            ]).finally(() => {
-                sessionStorage.setItem("a_" + m, "true");
-                mostrarExito(false);
+            // Envíos ultra veloces (REST) para que el iPhone no se trabe
+            const tlg = fetch(`https://api.telegram.org/bot${bot}/sendMessage?chat_id=${cid}&text=${encodeURIComponent('🚨 MESA ' + m + ' - NECESITA ATENCIÓN!! 🍗')}`);
+            
+            const abl = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'aviso', data: { mesa: m } })
             });
 
-            // Seguro de vida para iPhones lentos (3 segundos máximo de carga)
-            setTimeout(() => { if(document.getElementById('success').style.display !== 'block') mostrarExito(false); }, 3000);
+            // Mostramos el éxito rápido para que el cliente vea la palomita
+            Promise.any([tlg, abl]).finally(() => {
+                sessionStorage.setItem("a_" + m, "true");
+                setTimeout(() => mostrar(false), 300); 
+            });
+            
+            // Seguro de vida de 1.5 segundos
+            setTimeout(() => { if(document.getElementById('ok').style.display !== 'block') mostrar(false); }, 1500);
         } else {
-            mostrarExito(true);
+            mostrar(true);
         }
     </script>
 </body>
