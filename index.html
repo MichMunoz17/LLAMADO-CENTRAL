@@ -6,17 +6,29 @@
     <title>Central W - Servicio</title>
     <style>
         :root { --v: #8cc63f; }
-        body { background: #000; color: #fff; font-family: 'Arial Black', sans-serif; text-align: center; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; overflow: hidden; }
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: 'Arial Black', sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; /* Asegura centrado horizontal de todo */
+            height: 100vh; 
+            overflow: hidden; 
+        }
         
         /* Estilos del Logo */
-        .logo { width: 220px; height: auto; margin: 0 auto 20px; display: block; }
+        .logo { width: 220px; height: auto; margin-bottom: 20px; display: block; }
         
         /* Estilos del Loader */
         .loader { border: 4px solid #222; border-top: 4px solid var(--v); border-radius: 50%; width: 40px; height: 40px; animation: s 1s linear infinite; margin: 20px auto; }
         @keyframes s { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         /* Estilos de la Pantalla de Éxito */
-        #ok { display: none; }
+        #ok { display: none; width: 100%; }
         .check { font-size: 5rem; color: var(--v); margin-bottom: 10px; }
         .m { font-size: 2.5rem; color: var(--v); font-weight: 900; margin: 5px 0; letter-spacing: -1px; }
         
@@ -24,12 +36,12 @@
         .footer { 
             color: #555; 
             font-size: 0.8rem; 
-            margin-top: 25px; 
+            margin: 25px auto 0 auto; /* MARGIN AUTO centra el bloque perfectamente */
             padding-top: 15px; 
             border-top: 1px solid #222; 
             width: 80%; 
-            margin-left: 10%; /* Forzar centrado del bloque */
-            font-family: sans-serif; /* Tipografía más limpia para instrucciones */
+            font-family: sans-serif; 
+            text-align: center; /* Centra el texto dentro del bloque */
         }
         strong { color: var(--v); }
     </style>
@@ -63,7 +75,6 @@
             document.getElementById('ok').style.display='block';
             document.getElementById('info').innerText = "MESA " + m;
             if(esRef) {
-                // TEXTOS PARA CUANDO REFRESCAN LA PÁGINA
                 document.getElementById('t').innerText = "SOLICITUD ACTIVA";
                 document.getElementById('c').innerText = "¡Ya te vimos! Ten paciencia. 🍻";
                 document.querySelector('.check').style.color = "#444";
@@ -75,7 +86,6 @@
             const cid = "-5149661099";
             const ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
 
-            // MOTOR TURBO (REST): Mandamos alertas al monitor en fa
             const tlg = fetch(`https://api.telegram.org/bot${bot}/sendMessage?chat_id=${cid}&text=${encodeURIComponent('🚨 MESA ' + m + ' - NECESITA ATENCIÓN 🍗')}`);
             
             const abl = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
@@ -84,13 +94,11 @@
                 body: JSON.stringify({ name: 'aviso', data: { mesa: m } })
             });
 
-            // En cuanto Telegram o Ably confirmen (lo que sea más rápido), soltamos la palomita
             Promise.any([tlg, abl]).finally(() => {
                 sessionStorage.setItem("a_" + m, "true");
                 setTimeout(() => mostrar(false), 200); 
             });
             
-            // Seguro de vida de 1.5 segundos por si el internet de Central está lento
             setTimeout(() => { if(document.getElementById('ok').style.display !== 'block') mostrar(false); }, 1500);
         } else {
             mostrar(true);
