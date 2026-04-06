@@ -5,63 +5,112 @@
     <title>CENTRAL W - MONITOR</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        :root { --verde: #8cc63f; }
+        :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; }
         body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; text-align: center; }
-        .header { padding: 20px; border-bottom: 2px solid var(--verde); display: flex; align-items: center; justify-content: center; background: #111; }
-        .logo-small { height: 60px; margin-right: 20px; }
+        
+        .header { padding: 15px; border-bottom: 2px solid var(--verde); display: flex; align-items: center; justify-content: center; background: #111; }
+        .logo-small { height: 50px; margin-right: 20px; }
+
         #contenedor-alertas { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; gap: 20px; }
+        
         .tarjeta-mesa { 
-            background: #000; border: 5px solid var(--verde); border-radius: 20px;
-            width: 250px; padding: 30px; animation: flash 1s infinite alternate;
+            background: #000; border-radius: 25px;
+            width: 280px; padding: 20px; 
+            display: flex; flex-direction: column; justify-content: center;
         }
-        .num-mesa { font-size: 8rem; color: var(--verde); margin: 0; }
-        .tiempo { color: #555; font-size: 1rem; }
-        @keyframes flash { from { box-shadow: 0 0 10px var(--verde); } to { box-shadow: 0 0 40px var(--verde); } }
-        #no-hay { font-size: 2rem; color: #333; margin-top: 100px; }
+
+        /* ANIMACIONES DIFERENCIADAS */
+        .alerta-normal { 
+            border: 6px solid var(--verde); 
+            animation: flash-verde 1s infinite alternate; 
+        }
+        .alerta-urgente { 
+            border: 8px solid var(--rojo); 
+            animation: flash-rojo 0.4s infinite alternate; /* Parpadeo rápido */
+        }
+        .alerta-premio { 
+            border: 6px solid var(--amarillo); 
+            animation: flash-amarillo 1.5s infinite alternate; /* Parpadeo suave */
+        }
+
+        @keyframes flash-verde { from { box-shadow: 0 0 10px var(--verde); } to { box-shadow: 0 0 40px var(--verde); } }
+        @keyframes flash-rojo { from { box-shadow: 0 0 10px var(--rojo); } to { box-shadow: 0 0 60px var(--rojo); } }
+        @keyframes flash-amarillo { from { box-shadow: 0 0 10px var(--amarillo); } to { box-shadow: 0 0 40px var(--amarillo); } }
+
+        .num-mesa { font-size: 7.5rem; color: #fff; margin: 0; line-height: 1; }
+        .tipo-servicio { font-size: 1.2rem; margin: 10px 0; letter-spacing: -1px; text-transform: uppercase; }
+        .tiempo { color: #555; font-size: 0.8rem; font-family: sans-serif; }
+
+        #no-hay { font-size: 2rem; color: #222; margin-top: 150px; }
     </style>
 </head>
 <body>
     <div class="header">
         <img src="central-blanco.png" class="logo-small">
-        <h1>ALERTAS COMENSALES</h1>
+        <h1>PANEL CENTRAL WINGS</h1>
     </div>
 
-    <div id="no-hay">ESPERANDO ALERTAS DE ATENCIÓN...</div>
+    <div id="no-hay">ESPERANDO ACTIVIDAD...</div>
     <div id="contenedor-alertas"></div>
 
-    <audio id="pop" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
-
-    <script>
+    <audio id="snd-normal" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio> <audio id="snd-premio" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio> <audio id="snd-urgente" src="https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3"></audio> <script>
         const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         const canal = ably.channels.get('central-alertas');
-        const sonido = document.getElementById('pop');
 
         canal.subscribe('aviso', (msg) => {
             const mesa = msg.data.mesa;
-            sonido.play();
-            crearAlerta(mesa);
+            const texto = msg.data.texto || "SOLICITUD DE ATENCIÓN";
+            crearAlerta(mesa, texto);
         });
 
-        function crearAlerta(num) {
+        function crearAlerta(num, texto) {
             document.getElementById('no-hay').style.display = 'none';
             const idMesa = "mesa-" + num;
-            if (document.getElementById(idMesa)) return; // No repetir si ya está en pantalla
+            
+            if (document.getElementById(idMesa)) {
+                document.getElementById(idMesa).remove();
+            }
 
             const div = document.createElement('div');
             div.id = idMesa;
-            div.className = 'tarjeta-mesa';
-            div.innerHTML = `<p class="tiempo">ATENCIÓN EN MESA</p><p class="num-mesa">${num}</p><p class="tiempo">HACE UN MOMENTO</p>`;
-            document.getElementById('contenedor-alertas').appendChild(div);
+            
+            let claseAlerta = "alerta-normal";
+            let sonidoId = "snd-normal";
 
-            // Auto-limpieza después de 20 segundos (20,000 ms)
+            if (texto.includes("ENCARGADO")) {
+                claseAlerta = "alerta-urgente";
+                sonidoId = "snd-urgente";
+            } else if (texto.includes("PREMIO")) {
+                claseAlerta = "alerta-premio";
+                sonidoId = "snd-premio";
+            }
+
+            // Reproducir el sonido correspondiente
+            const audio = document.getElementById(sonidoId);
+            audio.currentTime = 0;
+            audio.play();
+
+            div.className = `tarjeta-mesa ${claseAlerta}`;
+            div.innerHTML = `
+                <p class="tipo-servicio">${texto}</p>
+                <p class="num-mesa">${num}</p>
+                <p class="tiempo">HACE UN MOMENTO</p>
+            `;
+            
+            document.getElementById('contenedor-alertas').prepend(div);
+
+            // Limpieza automática
             setTimeout(() => {
-                div.remove();
-                if (document.getElementById('contenedor-alertas').children.length === 0) {
-                    document.getElementById('no-hay').style.display = 'block';
-                }
-            }, 20000); 
+                div.style.transition = "opacity 1s";
+                div.style.opacity = "0";
+                setTimeout(() => {
+                    div.remove();
+                    if (document.getElementById('contenedor-alertas').children.length === 0) {
+                        document.getElementById('no-hay').style.display = 'block';
+                    }
+                }, 1000);
+            }, 45000); 
         }
     </script>
 </body>
 </html>
-
