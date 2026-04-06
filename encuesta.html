@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central W - Experiencia</title>
+    <style>
+        :root { --v: #8cc63f; --azul: #0088cc; --rojo: #ff4d4d; }
+        body { 
+            background: #000; color: #fff; font-family: 'Arial Black', sans-serif; 
+            text-align: center; margin: 0; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; height: 100vh; padding: 20px;
+        }
+        .logo { width: 160px; height: auto; margin-bottom: 20px; }
+        .btn-container { width: 100%; max-width: 320px; }
+        .btn {
+            display: block; width: 100%; padding: 20px; margin-bottom: 15px;
+            border-radius: 15px; text-decoration: none; font-size: 1.1rem;
+            transition: transform 0.2s; border: none; cursor: pointer;
+            font-family: 'Arial Black', sans-serif; color: #fff;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-premio { background: var(--v); box-shadow: 0 5px 15px rgba(140, 198, 63, 0.3); }
+        .btn-queja { background: #333; font-size: 0.9rem; color: #bbb; }
+        .btn-encargado { background: var(--rojo); }
+        .btn-escrito { background: var(--azul); }
+        #seccion-queja, #loading, #ya-atendido { display: none; }
+        .loader { border: 4px solid #222; border-top: 4px solid var(--v); border-radius: 50%; width: 30px; height: 30px; animation: s 1s linear infinite; margin: 10px auto; }
+        @keyframes s { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .mesa-tag { color: var(--v); font-size: 1.4rem; margin-bottom: 10px; }
+        p { font-family: sans-serif; font-size: 0.9rem; color: #888; }
+    </style>
+</head>
+<body>
+    <img src="central-blanco.png" alt="Central Wings" class="logo">
+    <div class="mesa-tag" id="display-mesa">MESA --</div>
+
+    <div id="seccion-inicio" class="btn-container">
+        <p>¿CÓMO VA TU VISITA HOY?</p>
+        <button onclick="enviar('BENEFICIO')" class="btn btn-premio">🎁 ¡QUIERO MI BENEFICIO!</button>
+        <button onclick="mostrarQuejas()" class="btn btn-queja">✍️ TENGO UNA SUGERENCIA</button>
+    </div>
+
+    <div id="seccion-queja" class="btn-container">
+        <p>LAMENTAMOS QUE ALGO NO ESTÉ BIEN.<br>¿CÓMO PREFIERES RESOLVERLO?</p>
+        <button onclick="enviar('ENCARGADO')" class="btn btn-encargado">👨‍💼 HABLAR CON ENCARGADO</button>
+        <button onclick="enviar('ESCRITO')" class="btn btn-escrito">📝 PREFIERO ESCRIBIRLO</button>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--v); cursor:pointer; font-family:sans-serif; margin-top:10px;">← Volver</button>
+    </div>
+
+    <div id="ya-atendido" class="btn-container">
+        <p id="msg-recibido" style="color: var(--v); font-weight: bold;"></p>
+        <p>¡Gracias por tu paciencia! 🍻</p>
+    </div>
+
+    <div id="loading">
+        <div class="loader"></div>
+        <p id="status-text">PROCESANDO...</p>
+    </div>
+
+    <script>
+        const p = new URLSearchParams(window.location.search);
+        const m = p.get('m') || "1";
+        const formUrl = "https://forms.gle/dyRqmjR3sH6D2cGWA";
+        document.getElementById('display-mesa').innerText = "MESA " + m;
+
+        // Verificar si ya envió algo en esta sesión
+        const estadoPrevio = sessionStorage.getItem("envio_" + m);
+        if (estadoPrevio) {
+            document.getElementById('seccion-inicio').style.display = 'none';
+            document.getElementById('ya-atendido').style.display = 'block';
+            document.getElementById('msg-recibido').innerText = "SOLICITUD PREVIA RECIBIDA";
+        }
+
+        function mostrarQuejas() {
+            document.getElementById('seccion-inicio').style.display = 'none';
+            document.getElementById('seccion-queja').style.display = 'block';
+        }
+
+        async function enviar(tipo) {
+            // Bloqueo visual inmediato
+            document.getElementById('seccion-inicio').style.display = 'none';
+            document.getElementById('seccion-queja').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            const bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
+            const cid = "-5149661099";
+            const ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
+
+            let msgTlg = ""; let msgMon = ""; let goForm = false;
+
+            if(tipo === 'BENEFICIO') {
+                msgTlg = `🎉 MESA ${m}: ¡Va por su PREMIO!`;
+                msgMon = `Mesa ${m}: ¡QUIERE PREMIO! 🎁`;
+                goForm = true;
+            } else if(tipo === 'ENCARGADO') {
+                msgTlg = `⚠️ MESA ${m}: ¡SOLICITA AL ENCARGADO!`;
+                msgMon = `Mesa ${m}: ¡LLAMAN AL ENCARGADO! 👨‍💼`;
+                document.getElementById('status-text').innerText = "SOLICITANDO ENCARGADO...";
+            } else if(tipo === 'ESCRITO') {
+                msgTlg = `📝 MESA ${m}: Escribirá sugerencia en el Form.`;
+                msgMon = `Mesa ${m}: ESCRIBIENDO QUEJA 📝`;
+                goForm = true;
+            }
+
+            // MÉTODO REST (Compatible con iPhone)
+            const tlg = fetch(`https://api.telegram.org/bot${bot}/sendMessage?chat_id=${cid}&text=${encodeURIComponent(msgTlg)}`);
+            const abl = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
+                method: 'POST',
+                headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'aviso', data: { mesa: m, texto: msgMon } })
+            });
+
+            // Guardar en sesión para evitar duplicados al refrescar
+            sessionStorage.setItem("envio_" + m, tipo);
+
+            try { await Promise.all([tlg, abl]); } catch(e) {}
+
+            if(goForm) {
+                setTimeout(() => { window.location.href = formUrl; }, 800);
+            } else {
+                document.getElementById('status-text').innerHTML = "¡LISTO!<br>El encargado va a tu mesa enseguida. 🍻";
+                document.querySelector('.loader').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
