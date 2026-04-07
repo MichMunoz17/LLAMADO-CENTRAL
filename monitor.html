@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>CENTRAL W - MONITOR FINAL</title>
+    <title>CENTRAL W - MONITOR</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; }
@@ -42,8 +42,7 @@
 <body>
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;">
-        <button id="btn-activar" onclick="iniciarTodo()">🚀 ACTIVAR MONITOR</button>
-        <p id="status-audio" style="color: #444; margin-top: 20px; font-family: sans-serif;">Haz clic para probar sonido</p>
+        <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR</button>
     </div>
 
     <div class="header">
@@ -54,58 +53,21 @@
     <div id="no-hay">ESPERANDO ACTIVIDAD...</div>
     <div id="contenedor-alertas"></div>
 
+    <audio id="snd-normal" src="normal.mp3" preload="auto"></audio> 
+    <audio id="snd-premio" src="premio.mp3" preload="auto"></audio> 
+    <audio id="snd-escribiendo" src="escribiendo.mp3" preload="auto"></audio> 
+    <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio> 
+
     <script>
         const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         const canal = ably.channels.get('central-alertas');
-        
-        let audioCtx = null;
 
-        function iniciarTodo() {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-                // Beep de prueba inmediato
-                beep(440, 0.2, 0.1);
-                
-                document.getElementById('status-audio').innerText = "¡SONIDO ACTIVADO!";
-                document.getElementById('status-audio').style.color = "#8cc63f";
-                
-                setTimeout(() => {
-                    document.getElementById('capa-inicio').style.display = 'none';
-                }, 500);
-            } catch (e) {
-                alert("Error al activar audio: " + e);
-            }
-        }
-
-        function beep(freq, dur, vol) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = "sine";
-            osc.frequency.value = freq;
-            gain.gain.value = vol;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + dur);
-        }
-
-        function sonar(tipo) {
-            if (!audioCtx) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            if (tipo === "ENCARGADO") {
-                beep(880, 0.2, 0.3); setTimeout(() => beep(880, 0.2, 0.3), 300);
-            } else if (tipo === "ESCRIBIENDO") {
-                beep(660, 0.4, 0.2);
-            } else if (tipo === "PREMIO") {
-                beep(523, 0.1, 0.2); setTimeout(() => beep(659, 0.15, 0.2), 150);
-            } else {
-                beep(440, 0.2, 0.2);
-            }
+        function iniciarMonitor() {
+            // "Cargamos" los audios con un play/pause rápido para que el navegador los suelte
+            document.querySelectorAll('audio').forEach(a => {
+                a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+            });
+            document.getElementById('capa-inicio').style.display = 'none';
         }
 
         canal.subscribe('aviso', (msg) => {
@@ -120,22 +82,32 @@
             const idMesa = "mesa-" + num;
             if (document.getElementById(idMesa)) document.getElementById(idMesa).remove();
 
-            let t = "NORMAL"; let c = "alerta-normal";
-            if (texto.includes("ENCARGADO")) { c = "alerta-encargado"; t = "ENCARGADO"; }
-            else if (texto.includes("ESCRIBIENDO")) { c = "alerta-escribiendo"; t = "ESCRIBIENDO"; }
-            else if (texto.includes("PREMIO")) { c = "alerta-premio"; t = "PREMIO"; }
+            let sonidoId = "snd-normal";
+            let claseAlerta = "alerta-normal";
 
-            sonar(t);
+            if (texto.includes("ENCARGADO")) { claseAlerta = "alerta-encargado"; sonidoId = "snd-encargado"; }
+            else if (texto.includes("ESCRIBIENDO")) { claseAlerta = "alerta-escribiendo"; sonidoId = "snd-escribiendo"; }
+            else if (texto.includes("PREMIO")) { claseAlerta = "alerta-premio"; sonidoId = "snd-premio"; }
+
+            // Reproducir audio local
+            const audio = document.getElementById(sonidoId);
+            if(audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log("Error al sonar:", e));
+            }
 
             const div = document.createElement('div');
             div.id = idMesa;
-            div.className = `tarjeta-mesa ${c}`;
+            div.className = `tarjeta-mesa ${claseAlerta}`;
             div.innerHTML = `<p class="tipo-servicio">${texto}</p><p class="num-mesa">${num}</p>`;
             document.getElementById('contenedor-alertas').prepend(div);
 
             setTimeout(() => {
                 div.style.opacity = "0";
-                setTimeout(() => { div.remove(); if (document.getElementById('contenedor-alertas').children.length === 0) document.getElementById('no-hay').style.display = 'block'; }, 1000);
+                setTimeout(() => { 
+                    div.remove(); 
+                    if (document.getElementById('contenedor-alertas').children.length === 0) document.getElementById('no-hay').style.display = 'block'; 
+                }, 1000);
             }, 60000); 
         }
     </script>
