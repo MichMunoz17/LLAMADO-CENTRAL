@@ -7,29 +7,22 @@
     <style>
         :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; }
         body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; text-align: center; }
-        
         .header { padding: 15px; border-bottom: 2px solid var(--verde); display: flex; align-items: center; justify-content: center; background: #111; }
         .logo-small { height: 50px; margin-right: 20px; }
 
-        /* Botón de activación más grande y centrado para asegurar el click */
         #capa-inicio {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); z-index: 999; display: flex; 
+            background: rgba(0,0,0,1); z-index: 999; display: flex; 
             flex-direction: column; justify-content: center; align-items: center;
         }
         #btn-activar {
-            background: var(--verde); border: none; color: #000; padding: 25px 50px;
+            background: var(--verde); border: none; color: #000; padding: 30px 60px;
             border-radius: 15px; cursor: pointer; font-family: 'Arial Black', sans-serif; 
-            font-size: 1.5rem; box-shadow: 0 0 30px var(--verde);
+            font-size: 1.8rem; box-shadow: 0 0 40px var(--verde);
         }
 
         #contenedor-alertas { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; gap: 20px; }
-        
-        .tarjeta-mesa { 
-            background: #000; border-radius: 25px;
-            width: 280px; padding: 20px; 
-            display: flex; flex-direction: column; justify-content: center;
-        }
+        .tarjeta-mesa { background: #000; border-radius: 25px; width: 280px; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
 
         .alerta-normal { border: 6px solid var(--verde); animation: flash-verde 1s infinite alternate; }
         .alerta-premio { border: 6px solid var(--amarillo); animation: flash-amarillo 1.5s infinite alternate; }
@@ -50,8 +43,8 @@
 <body>
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;">
-        <button id="btn-activar" onclick="activarAudio()">🔊 ACTIVAR MONITOR</button>
-        <p style="color: #666; margin-top: 20px; font-family: sans-serif;">Haz clic para habilitar las alertas sonoras</p>
+        <button id="btn-activar" onclick="activarMonitor()">🚀 ACTIVAR MONITOR</button>
+        <p style="color: #444; margin-top: 20px; font-family: sans-serif;">Obligatorio para habilitar el audio</p>
     </div>
 
     <div class="header">
@@ -62,34 +55,56 @@
     <div id="no-hay">ESPERANDO ACTIVIDAD...</div>
     <div id="contenedor-alertas"></div>
 
-    <audio id="snd-normal" crossorigin="anonymous" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio> 
-    <audio id="snd-premio" crossorigin="anonymous" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio> 
-    <audio id="snd-escribiendo" crossorigin="anonymous" src="https://assets.mixkit.co/active_storage/sfx/1103/1103-preview.mp3"></audio> 
-    <audio id="snd-encargado" crossorigin="anonymous" src="https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3"></audio> 
-
     <script>
         const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         const canal = ably.channels.get('central-alertas');
+        
+        let audioCtx;
 
-        // Función para "despertar" los audios
-        function activarAudio() {
-            const audios = document.querySelectorAll('audio');
-            audios.forEach(a => {
-                a.play(); // Intenta reproducir
-                a.pause(); // Lo pausa de inmediato
-                a.currentTime = 0; // Lo resetea
-            });
+        function activarMonitor() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             document.getElementById('capa-inicio').style.display = 'none';
-            console.log("Sistema de audio desbloqueado");
+            // Beep de prueba para confirmar
+            playBeep(440, "sine", 0.1);
+        }
+
+        // FUNCIÓN MAESTRA: Crea el sonido desde cero sin archivos
+        function playBeep(frecuencia, tipo, duracion) {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = tipo;
+            osc.frequency.setValueAtTime(frecuencia, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duracion);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duracion);
+        }
+
+        function sonarAlerta(tipo) {
+            if(tipo === "ENCARGADO") {
+                // Alerta urgente: Dos beeps rápidos y agudos
+                playBeep(880, "square", 0.2);
+                setTimeout(() => playBeep(880, "square", 0.2), 250);
+            } else if(tipo === "ESCRIBIENDO") {
+                // Alerta naranja: Un beep medio
+                playBeep(554, "triangle", 0.4);
+            } else if(tipo === "PREMIO") {
+                // Alerta premio: Sonido ascendente tipo "coin"
+                playBeep(523, "sine", 0.1);
+                setTimeout(() => playBeep(659, "sine", 0.15), 100);
+            } else {
+                // Alerta normal: Un pop suave
+                playBeep(330, "sine", 0.2);
+            }
         }
 
         canal.subscribe('aviso', (msg) => {
             const mesa = msg.data.mesa;
             let texto = msg.data.texto || "ATENCIÓN NORMAL";
-            
-            // LIMPIEZA DE TEXTO (Quita "Mesa X:")
             texto = texto.replace(/Mesa \d+:/gi, "").trim();
-            
             crearAlerta(mesa, texto);
         });
 
@@ -98,32 +113,19 @@
             const idMesa = "mesa-" + num;
             if (document.getElementById(idMesa)) document.getElementById(idMesa).remove();
 
+            let tipoAlerta = "NORMAL";
+            let claseAlerta = "alerta-normal";
+
+            if (texto.includes("ENCARGADO")) { claseAlerta = "alerta-encargado"; tipoAlerta = "ENCARGADO"; }
+            else if (texto.includes("ESCRIBIENDO")) { claseAlerta = "alerta-escribiendo"; tipoAlerta = "ESCRIBIENDO"; }
+            else if (texto.includes("PREMIO")) { claseAlerta = "alerta-premio"; tipoAlerta = "PREMIO"; }
+
+            sonarAlerta(tipoAlerta);
+
             const div = document.createElement('div');
             div.id = idMesa;
-            
-            let claseAlerta = "alerta-normal";
-            let sonidoId = "snd-normal";
-
-            if (texto.includes("ENCARGADO")) {
-                claseAlerta = "alerta-encargado";
-                sonidoId = "snd-encargado";
-            } else if (texto.includes("ESCRIBIENDO")) {
-                claseAlerta = "alerta-escribiendo";
-                sonidoId = "snd-escribiendo";
-            } else if (texto.includes("PREMIO")) {
-                claseAlerta = "alerta-premio";
-                sonidoId = "snd-premio";
-            }
-
-            const audio = document.getElementById(sonidoId);
-            if(audio) {
-                audio.currentTime = 0;
-                audio.play().catch(e => console.error("Error al reproducir audio:", e));
-            }
-
             div.className = `tarjeta-mesa ${claseAlerta}`;
             div.innerHTML = `<p class="tipo-servicio">${texto}</p><p class="num-mesa">${num}</p><p class="tiempo">HACE UN MOMENTO</p>`;
-            
             document.getElementById('contenedor-alertas').prepend(div);
 
             setTimeout(() => {
