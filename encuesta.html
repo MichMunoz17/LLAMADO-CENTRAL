@@ -38,12 +38,12 @@
     <div id="seccion-inicio" class="btn-container">
         <p>¿CÓMO VA TU VISITA HOY?</p>
         <button onclick="enviar('BENEFICIO')" class="btn btn-premio">🎁 ¡QUIERO MI BENEFICIO!</button>
-        <button onclick="mostrarQuejas()" class="btn btn-queja">✍️ TENGO UNA SUGERENCIA</button>
+        <button onclick="mostrarQuejas()" class="btn btn-queja">✍️ TENGO UNA SUGERENCIA O QUEJA</button>
     </div>
 
     <div id="seccion-queja" class="btn-container">
         <p>LAMENTAMOS QUE ALGO NO ESTÉ BIEN.<br>¿CÓMO PREFIERES RESOLVERLO?</p>
-        <button onclick="enviar('ENCARGADO')" class="btn btn-encargado">👨‍💼 HABLAR CON ENCARGADO</button>
+        <button onclick="enviar('ENCARGADO')" class="btn btn-encargado">👨‍💼 HABLAR CON ENCARGADO AHORA</button>
         <button onclick="enviar('ESCRITO')" class="btn btn-escrito">📝 PREFIERO ESCRIBIRLO</button>
         <button onclick="location.reload()" style="background:none; border:none; color:var(--v); cursor:pointer; font-family:sans-serif; margin-top:10px;">← Volver</button>
     </div>
@@ -90,16 +90,16 @@
             let msgTlg = ""; let msgMon = ""; let goForm = false;
 
             if(tipo === 'BENEFICIO') {
-                msgTlg = `🎉 MESA ${m}: ¡Va por su PREMIO!`;
-                msgMon = `Mesa ${m}: ¡QUIERE PREMIO! 🎁`;
+                msgTlg = `🎉 MESA ${m}: ¡Escaneo por un benficio!`;
+                msgMon = `Mesa ${m}: ¡SOLICITARÁ BENEFICIO! 🎁`;
                 goForm = true;
             } else if(tipo === 'ENCARGADO') {
                 msgTlg = `⚠️ MESA ${m}: ¡SOLICITA AL ENCARGADO!`;
-                msgMon = `Mesa ${m}: ¡LLAMAN AL ENCARGADO! 👨‍💼`;
+                msgMon = `Mesa ${m}: ¡LLAMAN AL ENCARGADO YA! 👨‍💼`;
                 document.getElementById('status-text').innerText = "SOLICITANDO ENCARGADO...";
             } else if(tipo === 'ESCRITO') {
-                msgTlg = `📝 MESA ${m}: Escribirá sugerencia en el Form.`;
-                msgMon = `Mesa ${m}: ESCRIBIENDO QUEJA 📝`;
+                msgTlg = `📝 MESA ${m}: Escribirá sugerencia o queja en el Form.`;
+                msgMon = `Mesa ${m}: ESCRIBIENDO QUEJA O SUG 📝`;
                 goForm = true;
             }
 
