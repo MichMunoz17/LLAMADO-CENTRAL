@@ -15,33 +15,29 @@
             display: flex; 
             flex-direction: column; 
             justify-content: center; 
-            align-items: center; /* Asegura centrado horizontal de todo */
+            align-items: center; 
             height: 100vh; 
             overflow: hidden; 
         }
         
-        /* Estilos del Logo */
         .logo { width: 220px; height: auto; margin-bottom: 20px; display: block; }
         
-        /* Estilos del Loader */
         .loader { border: 4px solid #222; border-top: 4px solid var(--v); border-radius: 50%; width: 40px; height: 40px; animation: s 1s linear infinite; margin: 20px auto; }
         @keyframes s { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Estilos de la Pantalla de Éxito */
         #ok { display: none; width: 100%; }
         .check { font-size: 5rem; color: var(--v); margin-bottom: 10px; }
         .m { font-size: 2.5rem; color: var(--v); font-weight: 900; margin: 5px 0; letter-spacing: -1px; }
         
-        /* Estilos de las Instrucciones Centradas */
         .footer { 
             color: #555; 
             font-size: 0.8rem; 
-            margin: 25px auto 0 auto; /* MARGIN AUTO centra el bloque perfectamente */
+            margin: 25px auto 0 auto; 
             padding-top: 15px; 
             border-top: 1px solid #222; 
             width: 80%; 
             font-family: sans-serif; 
-            text-align: center; /* Centra el texto dentro del bloque */
+            text-align: center; 
         }
         strong { color: var(--v); }
     </style>
@@ -81,7 +77,22 @@
             }
         };
 
-        if (!sessionStorage.getItem("a_" + m)) {
+        // --- LÓGICA ANTI-FANTASMA Y ANTI-SPAM ---
+        const ahora = Date.now();
+        const tiempoBloqueo = 4 * 60 * 1000; // 4 Minutos de espera entre alertas reales
+        const ultimaAlerta = localStorage.getItem("u_alt_" + m);
+        const esRecargaPestana = sessionStorage.getItem("a_" + m);
+
+        // 1. Si la pestaña ya envió alerta antes (Reload/Historial), no enviamos nada
+        if (esRecargaPestana) {
+            mostrar(true);
+        } 
+        // 2. Si es un escaneo nuevo pero fue hace menos de 4 minutos, bloqueamos spam
+        else if (ultimaAlerta && (ahora - ultimaAlerta < tiempoBloqueo)) {
+            mostrar(true);
+        } 
+        // 3. ¡ES UN LLAMADO VÁLIDO!
+        else {
             const bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
             const cid = "-5149661099";
             const ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
@@ -95,13 +106,14 @@
             });
 
             Promise.any([tlg, abl]).finally(() => {
+                // Guardamos marcas para evitar que el historial o el refresh nos troleen
                 sessionStorage.setItem("a_" + m, "true");
+                localStorage.setItem("u_alt_" + m, ahora);
                 setTimeout(() => mostrar(false), 200); 
             });
             
+            // Seguridad en caso de que el internet esté lento
             setTimeout(() => { if(document.getElementById('ok').style.display !== 'block') mostrar(false); }, 1500);
-        } else {
-            mostrar(true);
         }
     </script>
 </body>
