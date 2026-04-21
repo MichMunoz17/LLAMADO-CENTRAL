@@ -19,17 +19,16 @@
             height: 100vh; 
             overflow: hidden; 
             position: relative;
-            transition: background 0.5s ease; /* Transición suave de color de fondo */
+            transition: background 0.4s ease;
         }
         
-        /* Mesa sutil en la esquina superior derecha */
         .mesa-tag { 
             position: absolute; top: 20px; right: 20px; 
             color: #222; font-size: 0.7rem; font-family: sans-serif;
             font-weight: bold;
         }
 
-        .logo { width: 220px; height: auto; margin-bottom: 20px; display: block; transition: opacity 0.5s; }
+        .logo { width: 220px; height: auto; margin-bottom: 20px; display: block; }
         
         .loader { border: 4px solid #222; border-top: 4px solid var(--v); border-radius: 50%; width: 40px; height: 40px; animation: s 1s linear infinite; margin: 20px auto; }
         @keyframes s { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -37,30 +36,38 @@
         #ok { display: none; width: 100%; animation: entrada 0.5s ease-out; }
         @keyframes entrada { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .check { font-size: 5rem; color: var(--v); margin-bottom: 10px; transition: all 0.5s; }
+        .check { font-size: 5rem; color: var(--v); margin-bottom: 10px; transition: transform 0.3s; }
         
         /* --- ESTADO BLOQUEADO (REFRESH) --- */
-        body.bloqueado { background: var(--gris-bloqueo); } /* El fondo ya no es negro puro */
-        
-        .bloqueado .check { color: #444; transform: scale(0.8); }
-        .bloqueado .logo { opacity: 0.4; }
-        .bloqueado #t { color: #555 !important; }
-        .bloqueado #c { color: #444 !important; }
+        body.bloqueado { background: var(--gris-bloqueo); }
+        .bloqueado .check { color: #555; transform: scale(0.85); }
+
+        /* Ajuste de textos blancos */
+        #t, #c, .footer-pregunta { color: #fff !important; }
         
         .footer { 
-            color: #444; 
-            font-size: 0.8rem; 
             margin: 25px auto 0 auto; 
             padding-top: 15px; 
-            border-top: 1px solid #111; 
-            width: 80%; 
+            border-top: 1px solid #222; 
+            width: 85%; 
             font-family: sans-serif; 
             text-align: center; 
-            transition: opacity 0.5s;
         }
-        .bloqueado .footer { opacity: 0.2; } /* Footer casi invisible en bloqueo */
+
+        .footer-pregunta { font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; display: block; }
+
+        /* Texto de seguridad casi al fondo con opacidad mínima */
+        .seguridad-info {
+            position: absolute;
+            bottom: 15px;
+            width: 90%;
+            font-family: sans-serif;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.04); /* 4% de opacidad como pediste */
+            line-height: 1.2;
+        }
+
         strong { color: var(--v); }
-        .bloqueado strong { color: #444; }
     </style>
 </head>
 <body>
@@ -75,13 +82,17 @@
     <div id="ok">
         <div class="check" id="icono-check">✓</div>
         <h2 id="t" style="margin:0; letter-spacing: -1px; font-size: 2.2rem;">¡RECIBIDO!</h2>
-        <p id="c" style="color:#bbb; font-family: sans-serif; font-weight: bold; margin-top: 10px;">Representante en camino. 🍻</p>
+        <p id="c" style="font-family: sans-serif; font-weight: bold; margin-top: 10px;">Representante en camino. 🍻</p>
         
         <div class="footer" id="footer-texto">
-            ¿MÁS ALITAS? ¿OTRA BEBIDA? ¿YA TE VAS?<br>
-            <strong>VUELVE A ESCANEAR EL SENSOR DE TU MESA.</strong> <br><br>
-            <p style="font-size: 0.7rem; opacity: 0.5;">Seguridad anti-spam activa: 4min</p>
+            <span class="footer-pregunta">¿MÁS ALITAS? ¿OTRA BEBIDA? ¿YA TE VAS?</span>
+            <strong>VUELVE A ESCANEAR EL SENSOR DE TU MESA.</strong>
         </div>
+    </div>
+
+    <div class="seguridad-info">
+        POR SEGURIDAD, EL BOTÓN DIGITAL SE DESACTIVA DESPUÉS DE CADA USO.<br>
+        PARA UN NUEVO LLAMADO, DEBERÁS ESCANEAR FÍSICAMENTE TU SENSOR NUEVAMENTE DESPUÉS DE 4 MINUTOS.
     </div>
 
     <script>
@@ -99,9 +110,9 @@
             document.getElementById('ok').style.display='block';
             
             if(esBloqueo) {
-                document.body.classList.add('bloqueado'); // Cambia el fondo a gris oscuro
+                document.body.classList.add('bloqueado');
                 document.getElementById('t').innerText = "SOLICITUD ACTIVA";
-                document.getElementById('c').innerText = "Ya tenemos tu llamado. ¡TEN PACIENCIA! 🍻";
+                document.getElementById('c').innerText = "¡Ya te vimos! Ten paciencia. 🍻";
                 document.getElementById('icono-check').innerText = "⌛";
             }
         };
@@ -124,13 +135,7 @@
             const abl = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
                 method: 'POST',
                 headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    name: 'aviso', 
-                    data: { 
-                        mesa: m,
-                        t: t_nfc 
-                    } 
-                })
+                body: JSON.stringify({ name: 'aviso', data: { mesa: m, t: t_nfc } })
             });
 
             Promise.all([tlg, abl]).finally(() => {
