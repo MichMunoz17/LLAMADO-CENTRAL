@@ -15,7 +15,6 @@
             transition: background 0.4s ease;
         }
 
-        /* Ajuste para Safari en iPhone */
         html { height: -webkit-fill-available; }
 
         .mesa-tag { 
@@ -108,62 +107,62 @@
     </div>
 
     <script>
-        const p = new URLSearchParams(window.location.search);
-        const m = p.get('m') || "1";
-        const t_nfc = p.get('t') || ""; 
-        
-        document.getElementById('display-mesa').innerText = "REF: " + m;
-
-        history.pushState(null, null, location.href);
-        window.onpopstate = function () { history.go(1); };
-
-        const mostrar = (esBloqueo) => { 
-            document.getElementById('load').style.display='none'; 
-            document.getElementById('ok').style.display='block';
+        window.onload = function() {
+            var params = new URLSearchParams(window.location.search);
+            var m = params.get('m') || "1";
+            var t_nfc = params.get('t') || ""; 
             
-            if(esBloqueo) {
-                document.body.classList.add('bloqueado');
-                document.getElementById('t').innerText = "SOLICITUD ACTIVA";
-                document.getElementById('c').innerText = "¡Ya te vimos! Ten paciencia. 🍻";
-                document.getElementById('icono-check').innerText = "⌛";
+            document.getElementById('display-mesa').innerText = "REF: " + m;
+
+            function mostrar(esBloqueo) { 
+                document.getElementById('load').style.display = 'none'; 
+                document.getElementById('ok').style.display = 'block';
+                
+                if(esBloqueo) {
+                    document.body.classList.add('bloqueado');
+                    document.getElementById('t').innerText = "SOLICITUD ACTIVA";
+                    document.getElementById('c').innerText = "¡Ya te vimos! Ten paciencia. 🍻";
+                    document.getElementById('icono-check').innerText = "⌛";
+                }
+            }
+
+            var ahora = Date.now();
+            var tiempoBloqueo = 4 * 60 * 1000; 
+            var ultimaAlerta = localStorage.getItem("u_alt_" + m);
+            var esRecargaPestana = sessionStorage.getItem("a_" + m);
+
+            if (esRecargaPestana || (ultimaAlerta && (ahora - ultimaAlerta < tiempoBloqueo))) {
+                mostrar(true);
+            } 
+            else {
+                var bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
+                var cid = "-5149661099";
+                var ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
+                var msgTlg = '🚨 MESA ' + m + ' - NECESITA ATENCIÓN 🍗';
+
+                sessionStorage.setItem("a_" + m, "true");
+                localStorage.setItem("u_alt_" + m, ahora);
+
+                var p1 = fetch('https://api.telegram.org/bot' + bot + '/sendMessage?chat_id=' + cid + '&text=' + encodeURIComponent(msgTlg), { keepalive: true });
+                
+                var p2 = fetch('https://rest.ably.io/channels/central-alertas/messages', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: 'aviso', data: { mesa: m, t: t_nfc } }),
+                    keepalive: true
+                });
+
+                Promise.all([p1, p2]).then(function() {
+                    setTimeout(function() { mostrar(false); }, 100); 
+                }).catch(function() {
+                    mostrar(false);
+                });
+                
+                setTimeout(function() { 
+                    if(document.getElementById('ok').style.display !== 'block') mostrar(false); 
+                }, 2500);
             }
         };
-
-        const ahora = Date.now();
-        const tiempoBloqueo = 4 * 60 * 1000; 
-        const ultimaAlerta = localStorage.getItem("u_alt_" + m);
-        const esRecargaPestana = sessionStorage.getItem("a_" + m);
-
-        if (esRecargaPestana || (ultimaAlerta && (ahora - ultimaAlerta < tiempoBloqueo))) {
-            mostrar(true);
-        } 
-        else {
-            const bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
-            const cid = "-5149661099";
-            const ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
-            const msgTlg = '🚨 MESA ' + m + ' - NECESITA ATENCIÓN 🍗';
-
-            // Marcamos el envío
-            sessionStorage.setItem("a_" + m, "true");
-            localStorage.setItem("u_alt_" + m, ahora);
-
-            // Triple Seguro para iPhone con keepalive
-            const p1 = fetch(`https://api.telegram.org/bot${bot}/sendMessage?chat_id=${cid}&text=${encodeURIComponent(msgTlg)}`, { keepalive: true });
-            
-            const p2 = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
-                method: 'POST',
-                headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'aviso', data: { mesa: m, t: t_nfc } }),
-                keepalive: true
-            });
-
-            // Mostramos éxito tras asegurar el envío o tras 2.5 segundos
-            Promise.all([p1, p2]).finally(() => {
-                setTimeout(() => mostrar(false), 100); 
-            });
-            
-            setTimeout(() => { if(document.getElementById('ok').style.display !== 'block') mostrar(false); }, 2500);
-        }
     </script>
 </body>
 </html>
