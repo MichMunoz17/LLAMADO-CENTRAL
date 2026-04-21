@@ -47,7 +47,7 @@
 
     <div class="header">
         <img src="central-blanco.png" class="logo-small">
-        <h1>PANEL CENTRAL WINGS</h1>
+        <h1>ALERTAS CENTRAL WINGS</h1>
     </div>
 
     <div id="no-hay">ESPERANDO ACTIVIDAD...</div>
@@ -59,15 +59,42 @@
     <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio> 
 
     <script>
+        const IP_PUENTE = "http://localhost:8080"; // Usamos localhost porque el script corre en la misma PC
         const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         const canal = ably.channels.get('central-alertas');
 
         function iniciarMonitor() {
-            // "Cargamos" los audios con un play/pause rápido para que el navegador los suelte
             document.querySelectorAll('audio').forEach(a => {
                 a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
             });
             document.getElementById('capa-inicio').style.display = 'none';
+        }
+
+        // --- FUNCIÓN PARA LA LUZ STEREN ---
+        async function enviarSenalLuz(estado) {
+            try {
+                // El estado es 1 para prender, 0 para apagar
+                await fetch(`${IP_PUENTE}/luz?${estado}`, { mode: 'no-cors' });
+            } catch (e) { console.log("Luz no disponible"); }
+        }
+
+        function manejarEfectoLuz(tipo) {
+            if (tipo === 'normal' || tipo === 'premio') {
+                // Encendido fijo por 10 segundos
+                enviarSenalLuz(1);
+                setTimeout(() => enviarSenalLuz(0), 10000);
+            } 
+            else if (tipo === 'encargado' || tipo === 'escribiendo') {
+                // Parpadeo: 2s ON, 2s OFF hasta completar 8s totales
+                let ciclos = 0;
+                const intervalo = setInterval(() => {
+                    enviarSenalLuz(1); // Prende
+                    setTimeout(() => enviarSenalLuz(0), 2000); // Apaga a los 2s
+                    
+                    ciclos++;
+                    if (ciclos >= 2) clearInterval(intervalo); // 2 ciclos de 4s = 8s totales
+                }, 4000);
+            }
         }
 
         canal.subscribe('aviso', (msg) => {
@@ -84,12 +111,25 @@
 
             let sonidoId = "snd-normal";
             let claseAlerta = "alerta-normal";
+            let tipoLuz = "normal";
 
-            if (texto.includes("ENCARGADO")) { claseAlerta = "alerta-encargado"; sonidoId = "snd-encargado"; }
-            else if (texto.includes("ESCRIBIENDO")) { claseAlerta = "alerta-escribiendo"; sonidoId = "snd-escribiendo"; }
-            else if (texto.includes("PREMIO")) { claseAlerta = "alerta-premio"; sonidoId = "snd-premio"; }
+            if (texto.includes("ENCARGADO")) { 
+                claseAlerta = "alerta-encargado"; 
+                sonidoId = "snd-encargado"; 
+                tipoLuz = "encargado";
+            } else if (texto.includes("ESCRIBIENDO")) { 
+                claseAlerta = "alerta-escribiendo"; 
+                sonidoId = "snd-escribiendo"; 
+                tipoLuz = "escribiendo";
+            } else if (texto.includes("PREMIO")) { 
+                claseAlerta = "alerta-premio"; 
+                sonidoId = "snd-premio"; 
+                tipoLuz = "premio";
+            }
 
-            // Reproducir audio local
+            // Disparar efecto de luz
+            manejarEfectoLuz(tipoLuz);
+
             const audio = document.getElementById(sonidoId);
             if(audio) {
                 audio.currentTime = 0;
