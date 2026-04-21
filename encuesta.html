@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -113,16 +114,23 @@
     <script>
         const p = new URLSearchParams(window.location.search);
         const m = p.get('m') || "1";
+        const t_nfc = p.get('t') || ""; // Capturamos el {DATETIME} de la etiqueta NFC PRO
         const formUrl = "https://forms.gle/dyRqmjR3sH6D2cGWA";
+        
         document.getElementById('display-mesa').innerText = "REF: " + m;
 
+        // --- BLOQUEO DE HISTORIAL (ANTI-ATRÁS) ---
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
+
         // --- DOBLE VALIDACIÓN ANTI-SPAM ---
-        const ahora = Date.now();
         const tiempoEspera = 4 * 60 * 1000; // 4 minutos
         const ultimaAccion = localStorage.getItem("u_enc_" + m);
         const yaEnviadoEnPestana = sessionStorage.getItem("envio_" + m);
 
-        if (yaEnviadoEnPestana) {
+        if (yaEnviadoEnPestana || (ultimaAccion && (Date.now() - ultimaAccion < tiempoEspera))) {
             mostrarYaAtendido("SOLICITUD ACTIVA");
         }
 
@@ -140,9 +148,9 @@
         }
 
         async function enviar(tipo) {
-            // Si intenta enviar de nuevo muy rápido por un escaneo físico nuevo
-            const reintentoPronto = localStorage.getItem("u_enc_" + m);
-            if (reintentoPronto && (Date.now() - reintentoPronto < tiempoEspera)) {
+            // Re-chequeo de seguridad
+            const reintento = localStorage.getItem("u_enc_" + m);
+            if (reintento && (Date.now() - reintento < tiempoEspera)) {
                 mostrarYaAtendido("SOLICITUD EN CURSO");
                 return;
             }
@@ -159,7 +167,7 @@
 
             if(tipo === 'BENEFICIO') {
                 msgTlg = `🎉 MESA ${m}: ¡Escaneo por un beneficio!`;
-                msgMon = `Mesa ${m}: ¡SOLICITARÁ BENEFICIO! 🎁`;
+                msgMon = `Mesa ${m}: ¡SOLICITARÁ PREMIO! 🎁`; // Cambiado a PREMIO para activar luz amarilla
                 goForm = true;
             } else if(tipo === 'ENCARGADO') {
                 msgTlg = `⚠️ MESA ${m}: ¡SOLICITA AL ENCARGADO!`;
@@ -171,21 +179,31 @@
                 goForm = true;
             }
 
+            // Enviar a Telegram
             const tlg = fetch(`https://api.telegram.org/bot${bot}/sendMessage?chat_id=${cid}&text=${encodeURIComponent(msgTlg)}`);
+            
+            // Enviar a Ably (Panel Monitor) incluyendo el tiempo 't'
             const abl = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
                 method: 'POST',
                 headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'aviso', data: { mesa: m, texto: msgMon } })
+                body: JSON.stringify({ 
+                    name: 'aviso', 
+                    data: { 
+                        mesa: m, 
+                        texto: msgMon,
+                        t: t_nfc // Aquí mandamos el {DATETIME} al monitor
+                    } 
+                })
             });
 
-            // Guardar marcas de tiempo y sesión
+            // Guardar marcas para evitar spam
             sessionStorage.setItem("envio_" + m, tipo);
             localStorage.setItem("u_enc_" + m, Date.now());
 
             try { await Promise.all([tlg, abl]); } catch(e) {}
 
             if(goForm) {
-                setTimeout(() => { window.location.href = formUrl; }, 800);
+                setTimeout(() => { window.location.href = formUrl; }, 1500);
             } else {
                 document.getElementById('status-text').innerHTML = "¡LISTO!<br>El encargado va a tu mesa enseguida. 🍻";
                 document.querySelector('.loader').style.display = 'none';
