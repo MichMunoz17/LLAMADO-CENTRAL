@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,80 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Central W - Experiencia</title>
     <style>
-        :root { --v: #8cc63f; --azul: #0088cc; --rojo: #ff4d4d; }
+        :root { --v: #8cc63f; --azul: #0088cc; --rojo: #ff4d4d; --gris-bloqueo: #1a1a1a; }
         body { 
             background: #000; color: #fff; font-family: 'Arial Black', sans-serif; 
             text-align: center; margin: 0; display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; height: 100vh; padding: 20px;
-            position: relative;
-            overflow: hidden;
+            align-items: center; min-height: 100vh; padding: 20px;
+            position: relative; overflow-x: hidden;
+            transition: background 0.4s ease;
         }
 
-        .logo { width: 220px; height: auto; margin-bottom: 25px; }
-        .btn-container { width: 100%; max-width: 340px; }
+        .logo { width: 220px; height: auto; margin-top: 30px; margin-bottom: 25px; transition: opacity 0.4s; }
+        .btn-container { width: 100%; max-width: 340px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
 
-        .pregunta { 
-            font-family: 'Arial Black', sans-serif; 
-            font-size: 1.1rem; color: #fff; 
-            margin-bottom: 25px; letter-spacing: -0.5px;
-        }
+        .pregunta { font-size: 1.1rem; color: #fff; margin-bottom: 25px; letter-spacing: -0.5px; }
 
         .btn {
             display: block; width: 100%; padding: 22px; margin-bottom: 15px;
             border-radius: 18px; text-decoration: none; transition: transform 0.2s; 
             border: none; cursor: pointer; font-family: 'Arial Black', sans-serif;
-            position: relative;
             outline: none;
         }
         .btn:active { transform: scale(0.95); }
 
         /* --- ANIMACIONES DE NEÓN --- */
-        @keyframes neon-verde {
-            from { box-shadow: 0 0 10px rgba(140, 198, 63, 0.4); }
-            to { box-shadow: 0 0 25px rgba(140, 198, 63, 0.9); }
-        }
-        @keyframes neon-rojo {
-            from { box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
-            to { box-shadow: 0 0 30px rgba(255, 77, 77, 1); }
-        }
-        @keyframes neon-azul {
-            from { box-shadow: 0 0 10px rgba(0, 136, 204, 0.4); }
-            to { box-shadow: 0 0 25px rgba(0, 136, 204, 0.9); }
-        }
+        @keyframes neon-verde { from { box-shadow: 0 0 10px rgba(140, 198, 63, 0.4); } to { box-shadow: 0 0 25px rgba(140, 198, 63, 0.9); } }
+        @keyframes neon-rojo { from { box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); } to { box-shadow: 0 0 30px rgba(255, 77, 77, 1); } }
+        @keyframes neon-azul { from { box-shadow: 0 0 10px rgba(0, 136, 204, 0.4); } to { box-shadow: 0 0 25px rgba(0, 136, 204, 0.9); } }
 
-        .btn-premio { 
-            background: var(--v); color: #fff; font-size: 1.3rem; 
-            animation: neon-verde 1.2s infinite alternate;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
+        .btn-premio { background: var(--v); color: #fff; font-size: 1.3rem; animation: neon-verde 1.2s infinite alternate; }
+        .btn-queja { background: #222; font-size: 0.85rem; color: #777; padding: 15px; margin-top: 10px; }
+        .btn-encargado { background: var(--rojo); color: #fff; font-size: 1.1rem; animation: neon-rojo 0.5s infinite alternate; }
+        .btn-escrito { background: var(--azul); color: #fff; font-size: 1.1rem; animation: neon-azul 1s infinite alternate; }
 
-        .btn-queja { 
-            background: #222; font-size: 0.85rem; 
-            color: #777; padding: 15px; margin-top: 10px;
-        }
+        .mesa-tag { position: absolute; top: 20px; right: 20px; color: #222; font-size: 0.7rem; font-family: sans-serif; font-weight: bold; }
 
-        .btn-encargado { 
-            background: var(--rojo); color: #fff; font-size: 1.1rem; 
-            animation: neon-rojo 0.5s infinite alternate;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .btn-escrito { 
-            background: var(--azul); color: #fff; font-size: 1.1rem; 
-            animation: neon-azul 1s infinite alternate;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .mesa-tag { 
-            position: absolute; top: 20px; right: 20px; 
-            color: #1a1a1a; font-size: 0.7rem; font-family: sans-serif;
-            font-weight: bold;
-        }
+        /* --- ESTADO BLOQUEADO --- */
+        body.bloqueado { background: var(--gris-bloqueo); }
+        .bloqueado .logo { opacity: 0.5; }
+        .bloqueado #msg-recibido { color: #555 !important; }
 
         #seccion-queja, #loading, #ya-atendido { display: none; }
         .loader { border: 4px solid #222; border-top: 4px solid var(--v); border-radius: 50%; width: 30px; height: 30px; animation: s 1s linear infinite; margin: 10px auto; }
         @keyframes s { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .footer { position: absolute; bottom: 20px; font-family: sans-serif; font-size: 0.7rem; color: #1a1a1a; }
+
+        .footer { margin-top: 20px; font-family: sans-serif; font-size: 0.7rem; color: #fff; opacity: 0.8; }
+
+        .seguridad-info {
+            width: 90%; margin: 30px 0 10px 0; font-family: sans-serif; font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.2); line-height: 1.4; letter-spacing: 0.5px; text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -100,8 +74,8 @@
     </div>
 
     <div id="ya-atendido" class="btn-container">
-        <p id="msg-recibido" style="color: var(--v); font-family: 'Arial Black', sans-serif;"></p>
-        <p style="color: #fff; font-family: sans-serif;">¡Gracias por tu paciencia! 🍻</p>
+        <p id="msg-recibido" style="color: var(--v); font-family: 'Arial Black', sans-serif; font-size: 1.8rem;"></p>
+        <p style="color: #fff; font-family: sans-serif; font-weight: bold;">¡Gracias por tu paciencia! 🍻</p>
     </div>
 
     <div id="loading">
@@ -111,22 +85,23 @@
 
     <div class="footer">CENTRAL WINGS & SPORTS BAR</div>
 
+    <div class="seguridad-info">
+        POR SEGURIDAD, EL BOTÓN DIGITAL SE DESACTIVA DESPUÉS DE CADA USO.<br>
+        PARA UN NUEVO LLAMADO, ESCANEA FÍSICAMENTE TU SENSOR NUEVAMENTE DESPUÉS DE 4 MINUTOS.
+    </div>
+
     <script>
         const p = new URLSearchParams(window.location.search);
         const m = p.get('m') || "1";
-        const t_nfc = p.get('t') || ""; // Capturamos el {DATETIME} de la etiqueta NFC PRO
+        const t_nfc = p.get('t') || ""; 
         const formUrl = "https://forms.gle/dyRqmjR3sH6D2cGWA";
         
         document.getElementById('display-mesa').innerText = "REF: " + m;
 
-        // --- BLOQUEO DE HISTORIAL (ANTI-ATRÁS) ---
         history.pushState(null, null, location.href);
-        window.onpopstate = function () {
-            history.go(1);
-        };
+        window.onpopstate = function () { history.go(1); };
 
-        // --- DOBLE VALIDACIÓN ANTI-SPAM ---
-        const tiempoEspera = 4 * 60 * 1000; // 4 minutos
+        const tiempoEspera = 4 * 60 * 1000;
         const ultimaAccion = localStorage.getItem("u_enc_" + m);
         const yaEnviadoEnPestana = sessionStorage.getItem("envio_" + m);
 
@@ -140,6 +115,7 @@
         }
 
         function mostrarYaAtendido(texto) {
+            document.body.classList.add('bloqueado');
             document.getElementById('seccion-inicio').style.display = 'none';
             document.getElementById('seccion-queja').style.display = 'none';
             document.getElementById('loading').style.display = 'none';
@@ -148,9 +124,7 @@
         }
 
         async function enviar(tipo) {
-            // Re-chequeo de seguridad
-            const reintento = localStorage.getItem("u_enc_" + m);
-            if (reintento && (Date.now() - reintento < tiempoEspera)) {
+            if (localStorage.getItem("u_enc_" + m) && (Date.now() - localStorage.getItem("u_enc_" + m) < tiempoEspera)) {
                 mostrarYaAtendido("SOLICITUD EN CURSO");
                 return;
             }
@@ -167,7 +141,7 @@
 
             if(tipo === 'BENEFICIO') {
                 msgTlg = `🎉 MESA ${m}: ¡Escaneo por un beneficio!`;
-                msgMon = `Mesa ${m}: ¡SOLICITARÁ PREMIO! 🎁`; // Cambiado a PREMIO para activar luz amarilla
+                msgMon = `Mesa ${m}: ¡SOLICITARÁ PREMIO! 🎁`;
                 goForm = true;
             } else if(tipo === 'ENCARGADO') {
                 msgTlg = `⚠️ MESA ${m}: ¡SOLICITA AL ENCARGADO!`;
@@ -179,24 +153,13 @@
                 goForm = true;
             }
 
-            // Enviar a Telegram
             const tlg = fetch(`https://api.telegram.org/bot${bot}/sendMessage?chat_id=${cid}&text=${encodeURIComponent(msgTlg)}`);
-            
-            // Enviar a Ably (Panel Monitor) incluyendo el tiempo 't'
             const abl = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
                 method: 'POST',
                 headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    name: 'aviso', 
-                    data: { 
-                        mesa: m, 
-                        texto: msgMon,
-                        t: t_nfc // Aquí mandamos el {DATETIME} al monitor
-                    } 
-                })
+                body: JSON.stringify({ name: 'aviso', data: { mesa: m, texto: msgMon, t: t_nfc } })
             });
 
-            // Guardar marcas para evitar spam
             sessionStorage.setItem("envio_" + m, tipo);
             localStorage.setItem("u_enc_" + m, Date.now());
 
