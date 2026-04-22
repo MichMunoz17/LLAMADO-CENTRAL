@@ -1,9 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Central W - Experiencia</title>
     <style>
         :root { --v: #8cc63f; --azul: #0088cc; --rojo: #ff4d4d; --gris-bloqueo: #1a1a1a; }
@@ -15,7 +17,6 @@
             transition: background 0.4s ease;
         }
 
-        /* Logo siempre brillante al 100% */
         .logo { width: 220px; height: auto; margin-top: 30px; margin-bottom: 25px; opacity: 1 !important; }
         
         .btn-container { width: 100%; max-width: 340px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
@@ -29,7 +30,6 @@
         }
         .btn:active { transform: scale(0.95); }
 
-        /* --- ANIMACIONES DE NEÓN --- */
         @keyframes neon-verde { from { box-shadow: 0 0 10px rgba(140, 198, 63, 0.4); } to { box-shadow: 0 0 25px rgba(140, 198, 63, 0.9); } }
         @keyframes neon-rojo { from { box-shadow: 0 0 10px rgba(255, 77, 77, 0.4); } to { box-shadow: 0 0 30px rgba(255, 77, 77, 1); } }
         @keyframes neon-azul { from { box-shadow: 0 0 10px rgba(0, 136, 204, 0.4); } to { box-shadow: 0 0 25px rgba(0, 136, 204, 0.9); } }
@@ -41,7 +41,6 @@
 
         .mesa-tag { position: absolute; top: 20px; right: 20px; color: #222; font-size: 0.7rem; font-family: sans-serif; font-weight: bold; }
 
-        /* --- ESTADO BLOQUEADO --- */
         body.bloqueado { background: var(--gris-bloqueo); }
         .bloqueado #msg-recibido { color: #fff !important; }
 
@@ -92,100 +91,105 @@
         PARA UN NUEVO LLAMADO, DEBERÁS ESCANEAR FÍSICAMENTE TU SENSOR DESPUÉS DE 4 MINUTOS.<br>
         ESTO CON EL FIN DE EVITAR "SPAM" O ALERTAS FALSAS AL STAFF.<br><br>
 
-        <br>
-        POR LO QUE LA ALERTA NO FUNCIONARÁ SI REFRESCAS LA PAGINA O SI LA ABRES DE TU HISTORIAL DE NAVEGACIÓN AHORA O DÍAS DESPUÉS, QUE AUNQUE LLEGASE A MOSTRAR UN NUEVO ENVIÓ, EL SISTEMA DE ALERTAS TE "IGNORARÁ" SI NO ES UN ESCANEO "FRESCO".<br><br><br><br><br><br>
-
-
-
+        POR LO QUE LA ALERTA NO FUNCIONARÁ SI REFRESCAS LA PAGINA O SI LA ABRES DE TU HISTORIAL DE NAVEGACIÓN AHORA O DÍAS DESPUÉS, QUE AUNQUE LLEGASE A MOSTRAR UN NUEVO ENVIÓ, EL SISTEMA DE ALERTAS TE "IGNORARÁ" SI NO ES UN ESCANEO "FRESCO".<br><br>
         
-        
-        <br>
         PROJECT BY JAVIER MUÑOZ
-        
     </div>
 
     <script>
-        const p = new URLSearchParams(window.location.search);
-        const m = p.get('m') || "1";
-        const t_nfc = p.get('t') || ""; 
-        const formUrl = "https://forms.gle/dyRqmjR3sH6D2cGWA";
-        
-        document.getElementById('display-mesa').innerText = "REF: " + m;
-
-        history.pushState(null, null, location.href);
-        window.onpopstate = function () { history.go(1); };
-
-        const tiempoEspera = 4 * 60 * 1000;
-        const ultimaAccion = localStorage.getItem("u_enc_" + m);
-        const yaEnviadoEnPestana = sessionStorage.getItem("envio_" + m);
-
-        if (yaEnviadoEnPestana || (ultimaAccion && (Date.now() - ultimaAccion < tiempoEspera))) {
-            mostrarYaAtendido("SOLICITUD ACTIVA");
+        function getParam(name) {
+            var url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+            if (!results) return "";
+            if (!results[2]) return "";
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
         }
 
-        function mostrarQuejas() {
-            document.getElementById('seccion-inicio').style.display = 'none';
-            document.getElementById('seccion-queja').style.display = 'block';
-        }
+        window.onload = function() {
+            var m = getParam('m') || "1";
+            var t_nfc = getParam('t') || ""; 
+            var formUrl = "https://forms.gle/dyRqmjR3sH6D2cGWA";
+            var waUrl = "https://wa.me/qr/QY2WK2LUFDVJH1";
+            
+            document.getElementById('display-mesa').innerText = "REF: " + m;
 
-        function mostrarYaAtendido(texto) {
-            document.body.classList.add('bloqueado');
-            document.getElementById('seccion-inicio').style.display = 'none';
-            document.getElementById('seccion-queja').style.display = 'none';
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('ya-atendido').style.display = 'block';
-            document.getElementById('msg-recibido').innerText = texto;
-        }
+            window.mostrarQuejas = function() {
+                document.getElementById('seccion-inicio').style.display = 'none';
+                document.getElementById('seccion-queja').style.display = 'block';
+            };
 
-        async function enviar(tipo) {
-            if (localStorage.getItem("u_enc_" + m) && (Date.now() - localStorage.getItem("u_enc_" + m) < tiempoEspera)) {
-                mostrarYaAtendido("SOLICITUD EN CURSO");
-                return;
+            function mostrarYaAtendido(texto) {
+                document.body.classList.add('bloqueado');
+                document.getElementById('seccion-inicio').style.display = 'none';
+                document.getElementById('seccion-queja').style.display = 'none';
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('ya-atendido').style.display = 'block';
+                document.getElementById('msg-recibido').innerText = texto;
             }
 
-            document.getElementById('seccion-inicio').style.display = 'none';
-            document.getElementById('seccion-queja').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
+            var tiempoEspera = 4 * 60 * 1000;
+            var ultimaAccion = localStorage.getItem("u_enc_" + m);
+            var yaEnviadoEnPestana = sessionStorage.getItem("envio_" + m);
 
-            const bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
-            const cid = "-5149661099";
-            const ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
-
-            let msgTlg = ""; let msgMon = ""; let goForm = false;
-
-            if(tipo === 'BENEFICIO') {
-                msgTlg = `🎉 MESA ${m}: ¡Escaneo por un beneficio!`;
-                msgMon = `Mesa ${m}: ¡SOLICITARÁ PREMIO! 🎁`;
-                goForm = true;
-            } else if(tipo === 'ENCARGADO') {
-                msgTlg = `⚠️ MESA ${m}: ¡SOLICITA AL ENCARGADO!`;
-                msgMon = `Mesa ${m}: ¡LLAMAN AL ENCARGADO YA! 👨‍💼`;
-                document.getElementById('status-text').innerText = "SOLICITANDO ENCARGADO...";
-            } else if(tipo === 'ESCRITO') {
-                msgTlg = `📝 MESA ${m}: Escribirá sugerencia o queja en el Form.`;
-                msgMon = `Mesa ${m}: ESCRIBIENDO QUEJA O SUG 📝`;
-                goForm = true;
+            if (yaEnviadoEnPestana || (ultimaAccion && (Date.now() - ultimaAccion < tiempoEspera))) {
+                mostrarYaAtendido("SOLICITUD ACTIVA");
             }
 
-            const tlg = fetch(`https://api.telegram.org/bot${bot}/sendMessage?chat_id=${cid}&text=${encodeURIComponent(msgTlg)}`);
-            const abl = fetch(`https://rest.ably.io/channels/central-alertas/messages`, {
-                method: 'POST',
-                headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'aviso', data: { mesa: m, texto: msgMon, t: t_nfc } })
-            });
+            window.enviar = function(tipo) {
+                if (localStorage.getItem("u_enc_" + m) && (Date.now() - localStorage.getItem("u_enc_" + m) < tiempoEspera)) {
+                    mostrarYaAtendido("SOLICITUD EN CURSO");
+                    return;
+                }
 
-            sessionStorage.setItem("envio_" + m, tipo);
-            localStorage.setItem("u_enc_" + m, Date.now());
+                document.getElementById('seccion-inicio').style.display = 'none';
+                document.getElementById('seccion-queja').style.display = 'none';
+                document.getElementById('loading').style.display = 'block';
 
-            try { await Promise.all([tlg, abl]); } catch(e) {}
+                var bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
+                var cid = "-5149661099";
+                var ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
 
-            if(goForm) {
-                setTimeout(() => { window.location.href = formUrl; }, 1500);
-            } else {
-                document.getElementById('status-text').innerHTML = "¡LISTO!<br>EL ENCARGADO VA A TU MESA ENSEGUIDA. 🍻";
-                document.querySelector('.loader').style.display = 'none';
-            }
-        }
+                var msgTlg = ""; var msgMon = ""; var destino = "";
+
+                if(tipo === 'BENEFICIO') {
+                    msgTlg = "🎉 MESA " + m + ": ¡Escaneo por un beneficio!";
+                    msgMon = "Mesa " + m + ": ¡SOLICITARÁ PREMIO! 🎁";
+                    destino = formUrl;
+                } else if(tipo === 'ENCARGADO') {
+                    msgTlg = "⚠️ MESA " + m + ": ¡SOLICITA AL ENCARGADO!";
+                    msgMon = "Mesa " + m + ": ¡LLAMAN AL ENCARGADO YA! 👨‍💼";
+                    document.getElementById('status-text').innerText = "SOLICITANDO ENCARGADO...";
+                } else if(tipo === 'ESCRITO') {
+                    msgTlg = "📝 MESA " + m + ": Escribirá sugerencia al dueño (WhatsApp).";
+                    msgMon = "Mesa " + m + ": ESCRIBIENDO QUEJA O SUG 📝";
+                    destino = waUrl;
+                }
+
+                sessionStorage.setItem("envio_" + m, tipo);
+                localStorage.setItem("u_enc_" + m, Date.now());
+
+                var p1 = fetch('https://api.telegram.org/bot' + bot + '/sendMessage?chat_id=' + cid + '&text=' + encodeURIComponent(msgTlg), { keepalive: true });
+                var p2 = fetch('https://rest.ably.io/channels/central-alertas/messages', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Basic ' + btoa(ablyKey), 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: 'aviso', data: { mesa: m, texto: msgMon, t: t_nfc } }),
+                    keepalive: true
+                });
+
+                Promise.all([p1, p2]).then(function() {
+                    if(destino !== "") {
+                        setTimeout(function() { window.location.href = destino; }, 1500);
+                    } else {
+                        document.getElementById('status-text').innerHTML = "<strong>¡LISTO!<br>EL ENCARGADO VA A TU MESA ENSEGUIDA. 🍻</strong>";
+                        document.querySelector('.loader').style.display = 'none';
+                    }
+                }).catch(function() {
+                    if(destino !== "") { window.location.href = destino; }
+                });
+            };
+        };
     </script>
 </body>
 </html>
