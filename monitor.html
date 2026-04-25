@@ -9,18 +9,18 @@
         :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; }
         body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; text-align: center; }
         
-        /* Barra de estado para saber si todo está conectado */
+        /* Barra de estado informativa */
         #barra-estado { 
             background: #111; 
-            padding: 5px; 
-            font-size: 0.7rem; 
+            padding: 8px; 
+            font-size: 0.75rem; 
             border-bottom: 1px solid #333; 
             display: flex; 
             justify-content: space-around; 
             font-family: sans-serif;
             text-transform: uppercase;
         }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
         .online { background-color: var(--verde); box-shadow: 0 0 10px var(--verde); }
         .offline { background-color: var(--rojo); }
 
@@ -48,20 +48,19 @@
         .tipo-servicio { font-size: 1.1rem; margin: 10px 0; letter-spacing: -1px; text-transform: uppercase; color: #fff; }
         #no-hay { font-size: 2rem; color: #222; margin-top: 150px; }
 
-        /* Botón de prueba discreto */
-        #btn-test { position: fixed; bottom: 10px; right: 10px; background: #222; color: #444; border: 1px solid #333; padding: 5px; font-size: 0.6rem; cursor: pointer; border-radius: 5px; }
+        #btn-test { position: fixed; bottom: 10px; right: 10px; background: #222; color: #666; border: 1px solid #333; padding: 8px; font-size: 0.7rem; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
     <div id="barra-estado">
         <span><span id="dot-ably" class="status-dot offline"></span> ABLY: <span id="txt-ably">DESCONECTADO</span></span>
-        <span><span id="dot-puente" class="status-dot offline"></span> PUENTE PYTHON: <span id="txt-puente">APAGADO</span></span>
+        <span><span id="dot-puente" class="status-dot offline"></span> SCRIPT PYTHON: <span id="txt-puente">BUSCANDO...</span></span>
     </div>
 
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;" onerror="this.src='https://via.placeholder.com/200?text=CENTRAL+WINGS'">
         <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR</button>
-        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Haz clic para habilitar sonidos y conexión local</p>
+        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Central Wings - Sistema de Alertas</p>
     </div>
 
     <div class="header">
@@ -77,7 +76,7 @@
     <audio id="snd-escribiendo" src="escribiendo.mp3" preload="auto"></audio> 
     <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio> 
 
-    <button id="btn-test" onclick="probarSistema()">TEST SISTEMA</button>
+    <button id="btn-test" onclick="probarSistema()">TEST LUZ Y SONIDO</button>
 
     <script>
         const IP_PUENTE = "http://127.0.0.1:8080"; 
@@ -86,7 +85,7 @@
         const historialRecientes = {};
         let monitorActivado = false;
 
-        // Monitoreo de conexión a Ably
+        // Monitoreo de Ably
         ably.connection.on('connected', () => {
             document.getElementById('dot-ably').className = 'status-dot online';
             document.getElementById('txt-ably').innerText = 'CONECTADO';
@@ -97,49 +96,47 @@
             document.getElementById('txt-ably').innerText = 'DESCONECTADO';
         });
 
+        // Verificar el script de Python cada 5 segundos
         async function verificarPuente() {
             try {
-                // Intento silencioso de ver si el script de Python responde
-                await fetch(IP_PUENTE, { mode: 'no-cors', cache: 'no-store' });
+                // Hacemos una petición rápida para ver si la ventana negra de Python responde
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                
+                await fetch(IP_PUENTE + "/check", { mode: 'no-cors', signal: timeoutId.signal });
                 document.getElementById('dot-puente').className = 'status-dot online';
-                document.getElementById('txt-puente').innerText = 'ACTIVO';
+                document.getElementById('txt-puente').innerText = 'EN LÍNEA';
             } catch(e) {
                 document.getElementById('dot-puente').className = 'status-dot offline';
-                document.getElementById('txt-puente').innerText = 'ERROR / APAGADO';
+                document.getElementById('txt-puente').innerText = 'SIN CONEXIÓN LOCAL';
             }
         }
 
         function iniciarMonitor() {
             monitorActivado = true;
-            // Desbloqueo profundo de audio: reproducimos y pausamos todos los sonidos
-            const sonidos = document.querySelectorAll('audio');
-            sonidos.forEach(a => {
+            // Desbloqueo de audio
+            document.querySelectorAll('audio').forEach(a => {
                 a.muted = true;
                 a.play().then(() => {
                     a.pause();
                     a.currentTime = 0;
                     a.muted = false;
-                }).catch(e => console.error("Error activando audio:", e));
+                }).catch(e => console.log("Audio prep failed", e));
             });
 
             document.getElementById('capa-inicio').style.display = 'none';
-            console.log("--- MONITOR ACTIVADO ---");
             verificarPuente();
-            // Verificar el puente cada 10 segundos
-            setInterval(verificarPuente, 10000);
+            setInterval(verificarPuente, 5000);
         }
 
         async function enviarSenalLuz(estado) {
             if (!monitorActivado) return;
-            console.log("Enviando señal a Python: " + estado);
+            console.log("Comando a Python: " + (estado === 1 ? "PRENDER" : "APAGAR"));
             try {
+                // El monitor envía /?1 o /?0
                 await fetch(IP_PUENTE + "/?" + estado, { mode: 'no-cors' });
-                document.getElementById('dot-puente').className = 'status-dot online';
-                document.getElementById('txt-puente').innerText = 'ACTIVO';
             } catch (e) { 
-                document.getElementById('dot-puente').className = 'status-dot offline';
-                document.getElementById('txt-puente').innerText = 'ERROR DE ENVÍO';
-                console.error("ERROR: El script de Python no respondió. Revisa si la ventana negra está abierta."); 
+                console.error("No se pudo contactar con el script de Python."); 
             }
         }
 
@@ -161,7 +158,7 @@
 
         canal.subscribe('aviso', (msg) => {
             if (!monitorActivado) return;
-            console.log("--- SEÑAL RECIBIDA ---", msg.data);
+            console.log("Alerta recibida:", msg.data);
             
             let mesa = msg.data.mesa;
             let t_etiqueta = msg.data.t;
@@ -173,20 +170,19 @@
                     let fechaEtiqueta = new Date(t_iso);
                     let diffSegundos = Math.floor((ahora - fechaEtiqueta) / 1000);
                     
-                    // Filtro de 5 minutos para pruebas
+                    // Filtro de frescura: 5 minutos máximo
                     if (Math.abs(diffSegundos) > 300) {
-                        console.warn("Alerta vieja o reloj desfasado: " + diffSegundos + "s");
-                        // return; // Omitimos el bloqueo por ahora para que no falle la prueba
+                        console.warn("Ignorando alerta vieja de " + diffSegundos + " segundos.");
+                        return; 
                     }
 
                     let idUnico = mesa + "_" + t_etiqueta;
                     if (historialRecientes[idUnico]) return;
                     historialRecientes[idUnico] = true;
-                } catch (e) { console.error("Error tiempo:", e); }
+                } catch (e) { console.error("Error validando tiempo", e); }
             }
 
-            let texto = msg.data.texto || "ATENCIÓN NORMAL";
-            texto = texto.replace(/Mesa \d+:/gi, "").trim();
+            let texto = (msg.data.texto || "ATENCIÓN").replace(/Mesa \d+:/gi, "").trim();
             crearAlerta(mesa, texto);
         });
 
@@ -214,23 +210,24 @@
                 tipoLuz = "premio";
             }
 
+            // Disparar luz física
             manejarEfectoLuz(tipoLuz);
 
-            // Sonido
-            if (monitorActivado) {
-                let audio = document.getElementById(sonidoId);
-                if(audio) {
-                    audio.currentTime = 0;
-                    audio.play().catch(e => console.error("Fallo audio alerta:", e));
-                }
+            // Disparar sonido
+            let audio = document.getElementById(sonidoId);
+            if(audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log("Error play", e));
             }
 
+            // Crear tarjeta visual
             let div = document.createElement('div');
             div.id = idMesa;
             div.className = "tarjeta-mesa " + claseAlerta;
             div.innerHTML = '<p class="tipo-servicio">' + texto + '</p><p class="num-mesa">' + num + '</p>';
             document.getElementById('contenedor-alertas').prepend(div);
 
+            // Desaparecer después de un minuto
             setTimeout(() => {
                 div.style.opacity = "0";
                 setTimeout(() => { 
@@ -243,7 +240,11 @@
         }
 
         function probarSistema() {
-            crearAlerta("TEST", "ALERTA DE PRUEBA");
+            if(!monitorActivado) {
+                alert("Primero haz clic en ACTIVAR MONITOR");
+                return;
+            }
+            crearAlerta("TEST", "PRUEBA DE CONEXIÓN");
         }
     </script>
 </body>
