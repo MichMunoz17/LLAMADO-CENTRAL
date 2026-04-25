@@ -3,34 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CENTRAL W - MONITOR DIAGNÓSTICO</title>
+    <title>CENTRAL W - MONITOR PRO</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; }
         body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; text-align: center; }
+        
+        /* Barra de estado para saber si todo está conectado */
+        #barra-estado { 
+            background: #111; 
+            padding: 5px; 
+            font-size: 0.7rem; 
+            border-bottom: 1px solid #333; 
+            display: flex; 
+            justify-content: space-around; 
+            font-family: sans-serif;
+            text-transform: uppercase;
+        }
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .online { background-color: var(--verde); box-shadow: 0 0 10px var(--verde); }
+        .offline { background-color: var(--rojo); }
+
         .header { padding: 15px; border-bottom: 2px solid var(--verde); display: flex; align-items: center; justify-content: center; background: #111; }
         .logo-small { height: 50px; margin-right: 20px; }
+        
         #capa-inicio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #btn-activar { background: var(--verde); border: none; color: #000; padding: 30px 60px; border-radius: 15px; cursor: pointer; font-family: 'Arial Black', sans-serif; font-size: 1.8rem; box-shadow: 0 0 40px var(--verde); }
+        #btn-activar { background: var(--verde); border: none; color: #000; padding: 30px 60px; border-radius: 15px; cursor: pointer; font-family: 'Arial Black', sans-serif; font-size: 1.8rem; box-shadow: 0 0 40px var(--verde); transition: transform 0.2s; }
+        #btn-activar:active { transform: scale(0.95); }
+        
         #contenedor-alertas { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; gap: 20px; }
         .tarjeta-mesa { background: #000; border-radius: 25px; width: 280px; padding: 20px; display: flex; flex-direction: column; justify-content: center; transition: opacity 0.5s; }
+        
         .alerta-normal { border: 6px solid var(--verde); animation: flash-verde 1s infinite alternate; }
         .alerta-premio { border: 6px solid var(--amarillo); animation: flash-amarillo 1.5s infinite alternate; }
         .alerta-escribiendo { border: 6px solid var(--naranja); animation: flash-naranja 0.8s infinite alternate; }
         .alerta-encargado { border: 8px solid var(--rojo); animation: flash-rojo 0.4s infinite alternate; }
+        
         @keyframes flash-verde { from { box-shadow: 0 0 10px var(--verde); } to { box-shadow: 0 0 40px var(--verde); } }
         @keyframes flash-amarillo { from { box-shadow: 0 0 10px var(--amarillo); } to { box-shadow: 0 0 40px var(--amarillo); } }
         @keyframes flash-naranja { from { box-shadow: 0 0 10px var(--naranja); } to { box-shadow: 0 0 50px var(--naranja); } }
         @keyframes flash-rojo { from { box-shadow: 0 0 10px var(--rojo); } to { box-shadow: 0 0 70px var(--rojo); } }
+        
         .num-mesa { font-size: 7.5rem; color: #fff; margin: 0; line-height: 1; }
         .tipo-servicio { font-size: 1.1rem; margin: 10px 0; letter-spacing: -1px; text-transform: uppercase; color: #fff; }
         #no-hay { font-size: 2rem; color: #222; margin-top: 150px; }
+
+        /* Botón de prueba discreto */
+        #btn-test { position: fixed; bottom: 10px; right: 10px; background: #222; color: #444; border: 1px solid #333; padding: 5px; font-size: 0.6rem; cursor: pointer; border-radius: 5px; }
     </style>
 </head>
 <body>
+    <div id="barra-estado">
+        <span><span id="dot-ably" class="status-dot offline"></span> ABLY: <span id="txt-ably">DESCONECTADO</span></span>
+        <span><span id="dot-puente" class="status-dot offline"></span> PUENTE PYTHON: <span id="txt-puente">APAGADO</span></span>
+    </div>
+
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;" onerror="this.src='https://via.placeholder.com/200?text=CENTRAL+WINGS'">
         <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR</button>
+        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Haz clic para habilitar sonidos y conexión local</p>
     </div>
 
     <div class="header">
@@ -46,94 +77,128 @@
     <audio id="snd-escribiendo" src="escribiendo.mp3" preload="auto"></audio> 
     <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio> 
 
+    <button id="btn-test" onclick="probarSistema()">TEST SISTEMA</button>
+
     <script>
         const IP_PUENTE = "http://127.0.0.1:8080"; 
         const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         const canal = ably.channels.get('central-alertas');
         const historialRecientes = {};
+        let monitorActivado = false;
+
+        // Monitoreo de conexión a Ably
+        ably.connection.on('connected', () => {
+            document.getElementById('dot-ably').className = 'status-dot online';
+            document.getElementById('txt-ably').innerText = 'CONECTADO';
+        });
+
+        ably.connection.on('disconnected', () => {
+            document.getElementById('dot-ably').className = 'status-dot offline';
+            document.getElementById('txt-ably').innerText = 'DESCONECTADO';
+        });
+
+        async function verificarPuente() {
+            try {
+                // Intento silencioso de ver si el script de Python responde
+                await fetch(IP_PUENTE, { mode: 'no-cors', cache: 'no-store' });
+                document.getElementById('dot-puente').className = 'status-dot online';
+                document.getElementById('txt-puente').innerText = 'ACTIVO';
+            } catch(e) {
+                document.getElementById('dot-puente').className = 'status-dot offline';
+                document.getElementById('txt-puente').innerText = 'ERROR / APAGADO';
+            }
+        }
 
         function iniciarMonitor() {
-            document.querySelectorAll('audio').forEach(function(a) {
-                a.play().then(function() { a.pause(); a.currentTime = 0; }).catch(function() {});
+            monitorActivado = true;
+            // Desbloqueo profundo de audio: reproducimos y pausamos todos los sonidos
+            const sonidos = document.querySelectorAll('audio');
+            sonidos.forEach(a => {
+                a.muted = true;
+                a.play().then(() => {
+                    a.pause();
+                    a.currentTime = 0;
+                    a.muted = false;
+                }).catch(e => console.error("Error activando audio:", e));
             });
+
             document.getElementById('capa-inicio').style.display = 'none';
-            console.log("--- MONITOR CENTRAL WINGS INICIADO ---");
+            console.log("--- MONITOR ACTIVADO ---");
+            verificarPuente();
+            // Verificar el puente cada 10 segundos
+            setInterval(verificarPuente, 10000);
         }
 
         async function enviarSenalLuz(estado) {
+            if (!monitorActivado) return;
             console.log("Enviando señal a Python: " + estado);
             try {
                 await fetch(IP_PUENTE + "/?" + estado, { mode: 'no-cors' });
+                document.getElementById('dot-puente').className = 'status-dot online';
+                document.getElementById('txt-puente').innerText = 'ACTIVO';
             } catch (e) { 
-                console.error("ERROR: El script de Python no respondió. ¿Está abierto?"); 
+                document.getElementById('dot-puente').className = 'status-dot offline';
+                document.getElementById('txt-puente').innerText = 'ERROR DE ENVÍO';
+                console.error("ERROR: El script de Python no respondió. Revisa si la ventana negra está abierta."); 
             }
         }
 
         function manejarEfectoLuz(tipo) {
             if (tipo === 'normal' || tipo === 'premio') {
                 enviarSenalLuz(1);
-                setTimeout(function() { enviarSenalLuz(0); }, 8000);
+                setTimeout(() => { enviarSenalLuz(0); }, 8000);
             } 
             else if (tipo === 'encargado' || tipo === 'escribiendo') {
-                var ciclos = 0;
-                var intervalo = setInterval(function() {
+                let ciclos = 0;
+                let intervalo = setInterval(() => {
                     enviarSenalLuz(1);
-                    setTimeout(function() { enviarSenalLuz(0); }, 1500);
+                    setTimeout(() => { enviarSenalLuz(0); }, 1500);
                     ciclos++;
                     if (ciclos >= 3) clearInterval(intervalo);
                 }, 3000);
             }
         }
 
-        canal.subscribe('aviso', function(msg) {
-            console.log("--- SEÑAL RECIBIDA DE ABLY ---", msg.data);
+        canal.subscribe('aviso', (msg) => {
+            if (!monitorActivado) return;
+            console.log("--- SEÑAL RECIBIDA ---", msg.data);
             
-            var mesa = msg.data.mesa;
-            var t_etiqueta = msg.data.t;
+            let mesa = msg.data.mesa;
+            let t_etiqueta = msg.data.t;
 
             if (t_etiqueta) {
-                var ahora = new Date();
+                let ahora = new Date();
                 try {
-                    var t_iso = t_etiqueta.replace(" ", "T");
-                    var fechaEtiqueta = new Date(t_iso);
+                    let t_iso = t_etiqueta.replace(" ", "T");
+                    let fechaEtiqueta = new Date(t_iso);
+                    let diffSegundos = Math.floor((ahora - fechaEtiqueta) / 1000);
                     
-                    // Calculamos la diferencia
-                    var diffSegundos = Math.floor((ahora - fechaEtiqueta) / 1000);
-                    console.log("Tiempo transcurrido desde escaneo: " + diffSegundos + " segundos.");
-
-                    // MODIFICACIÓN TEMPORAL PARA PRUEBAS: 
-                    // Si la diferencia es muy grande o negativa, ignora el filtro para que puedas probar.
-                    if (Math.abs(diffSegundos) > 300) { // Aumentamos a 5 minutos de margen por si acaso
-                        console.warn("⚠️ ALERTA SOSPECHOSA: " + diffSegundos + "s de diferencia. Revisa la hora de tu PC y Cel.");
-                        // return; // DESCOMENTA ESTA LÍNEA después de que veas que todo funciona
+                    // Filtro de 5 minutos para pruebas
+                    if (Math.abs(diffSegundos) > 300) {
+                        console.warn("Alerta vieja o reloj desfasado: " + diffSegundos + "s");
+                        // return; // Omitimos el bloqueo por ahora para que no falle la prueba
                     }
 
-                    var idUnico = mesa + "_" + t_etiqueta;
-                    if (historialRecientes[idUnico]) {
-                        console.warn("⚠️ ALERTA DUPLICADA: Ya procesamos esta mesa con este tiempo.");
-                        return;
-                    }
+                    let idUnico = mesa + "_" + t_etiqueta;
+                    if (historialRecientes[idUnico]) return;
                     historialRecientes[idUnico] = true;
-                } catch (e) { console.error("Error procesando tiempo: ", e); }
-            } else {
-                console.warn("⚠️ ALERTA SIN TIEMPO: No viene el dato 't' en el mensaje.");
+                } catch (e) { console.error("Error tiempo:", e); }
             }
 
-            var texto = msg.data.texto || "ATENCIÓN NORMAL";
+            let texto = msg.data.texto || "ATENCIÓN NORMAL";
             texto = texto.replace(/Mesa \d+:/gi, "").trim();
             crearAlerta(mesa, texto);
         });
 
         function crearAlerta(num, texto) {
-            console.log("Creando tarjeta para Mesa " + num);
             document.getElementById('no-hay').style.display = 'none';
-            var idMesa = "mesa-" + num;
-            var vieja = document.getElementById(idMesa);
+            let idMesa = "mesa-" + num;
+            let vieja = document.getElementById(idMesa);
             if (vieja) vieja.remove();
 
-            var sonidoId = "snd-normal";
-            var claseAlerta = "alerta-normal";
-            var tipoLuz = "normal";
+            let sonidoId = "snd-normal";
+            let claseAlerta = "alerta-normal";
+            let tipoLuz = "normal";
 
             if (texto.includes("ENCARGADO")) { 
                 claseAlerta = "alerta-encargado"; 
@@ -151,27 +216,34 @@
 
             manejarEfectoLuz(tipoLuz);
 
-            var audio = document.getElementById(sonidoId);
-            if(audio) {
-                audio.currentTime = 0;
-                audio.play().catch(function(e) { console.error("Error audio: ", e); });
+            // Sonido
+            if (monitorActivado) {
+                let audio = document.getElementById(sonidoId);
+                if(audio) {
+                    audio.currentTime = 0;
+                    audio.play().catch(e => console.error("Fallo audio alerta:", e));
+                }
             }
 
-            var div = document.createElement('div');
+            let div = document.createElement('div');
             div.id = idMesa;
             div.className = "tarjeta-mesa " + claseAlerta;
             div.innerHTML = '<p class="tipo-servicio">' + texto + '</p><p class="num-mesa">' + num + '</p>';
             document.getElementById('contenedor-alertas').prepend(div);
 
-            setTimeout(function() {
+            setTimeout(() => {
                 div.style.opacity = "0";
-                setTimeout(function() { 
+                setTimeout(() => { 
                     if(div.parentNode) div.remove(); 
                     if (document.getElementById('contenedor-alertas').children.length === 0) {
                         document.getElementById('no-hay').style.display = 'block'; 
                     }
                 }, 1000);
             }, 60000); 
+        }
+
+        function probarSistema() {
+            crearAlerta("TEST", "ALERTA DE PRUEBA");
         }
     </script>
 </body>
