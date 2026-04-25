@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>CENTRAL W - MONITOR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CENTRAL W - MONITOR CLOUD</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; }
@@ -28,15 +29,20 @@
 </head>
 <body>
     <div id="capa-inicio">
-        <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;">
+        <!-- Logo de carga -->
+        <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;" onerror="this.src='https://via.placeholder.com/200?text=CENTRAL+WINGS'">
         <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR</button>
     </div>
+
     <div class="header">
-        <img src="central-blanco.png" class="logo-small">
+        <img src="central-blanco.png" class="logo-small" onerror="this.style.display='none'">
         <h1>ALERTAS CENTRAL WINGS</h1>
     </div>
+
     <div id="no-hay">ESPERANDO ACTIVIDAD...</div>
     <div id="contenedor-alertas"></div>
+
+    <!-- Sonidos -->
     <audio id="snd-normal" src="normal.mp3" preload="auto"></audio> 
     <audio id="snd-premio" src="premio.mp3" preload="auto"></audio> 
     <audio id="snd-escribiendo" src="escribiendo.mp3" preload="auto"></audio> 
@@ -49,67 +55,61 @@
         const historialRecientes = {};
 
         function iniciarMonitor() {
+            // Desbloqueo de audio para navegadores modernos
             document.querySelectorAll('audio').forEach(function(a) {
                 a.play().then(function() { a.pause(); a.currentTime = 0; }).catch(function() {});
             });
             document.getElementById('capa-inicio').style.display = 'none';
+            console.log("Monitor Iniciado y listo.");
         }
 
+        // --- CONEXIÓN CON EL PUENTE DE PYTHON ---
         async function enviarSenalLuz(estado) {
             try {
+                // Mandamos /?1 o /?0 según el estado
+                // Usamos no-cors para evitar problemas de seguridad local
                 await fetch(IP_PUENTE + "/?" + estado, { mode: 'no-cors' });
-            } catch (e) { console.log("Luz no disponible"); }
+            } catch (e) { 
+                console.log("Puente Python no responde. ¿Está abierto el script?"); 
+            }
         }
 
+        // --- LÓGICA DE INNOVACIÓN: EFECTOS FÍSICOS ---
         function manejarEfectoLuz(tipo) {
             if (tipo === 'normal' || tipo === 'premio') {
+                // Luz fija por 8 segundos
                 enviarSenalLuz(1);
                 setTimeout(function() { enviarSenalLuz(0); }, 8000);
             } 
             else if (tipo === 'encargado' || tipo === 'escribiendo') {
+                // Parpadeo de emergencia: 3 pulsos largos
                 var ciclos = 0;
                 var intervalo = setInterval(function() {
                     enviarSenalLuz(1);
-                    setTimeout(function() { enviarSenalLuz(0); }, 2000);
+                    setTimeout(function() { enviarSenalLuz(0); }, 1500); // Prende 1.5s
                     ciclos++;
                     if (ciclos >= 3) clearInterval(intervalo);
-                }, 4000);
+                }, 3000); // Cada 3 segundos hace el ciclo
             }
         }
 
         canal.subscribe('aviso', function(msg) {
             var mesa = msg.data.mesa;
-            var t_etiqueta = msg.data.t; // Recibe: "2026-04-21 14:49:29"
+            var t_etiqueta = msg.data.t;
 
             if (t_etiqueta) {
                 var ahora = new Date();
-                
                 try {
-                    // Limpiamos el formato de NFC Tools para que JS lo entienda bien
-                    // Reemplazamos el espacio por una 'T' para formato ISO estándar
                     var t_iso = t_etiqueta.replace(" ", "T");
                     var fechaEtiqueta = new Date(t_iso);
-                    
                     var diffSegundos = Math.floor((ahora - fechaEtiqueta) / 1000);
 
-                    // 1. FILTRO DE HISTORIAL (Más de 120 segundos = Viejo)
-                    if (diffSegundos > 120) {
-                        console.log("IGNORADO: Alerta vieja de Mesa " + mesa + " (" + diffSegundos + "s)");
-                        return;
-                    }
+                    if (diffSegundos > 120) return; // Ignorar alertas viejas
 
-                    // 2. FILTRO DE RECARGA (Mismo t_etiqueta para misma mesa)
                     var idUnico = mesa + "_" + t_etiqueta;
-                    if (historialRecientes[idUnico]) {
-                        console.log("IGNORADO: Recarga detectada en Mesa " + mesa);
-                        return;
-                    }
+                    if (historialRecientes[idUnico]) return; // Evitar duplicados
                     historialRecientes[idUnico] = true;
-                    setTimeout(function() { delete historialRecientes[idUnico]; }, 300000);
-
-                } catch (e) {
-                    console.log("Error procesando tiempo: " + e);
-                }
+                } catch (e) { console.log("Error tiempo: " + e); }
             }
 
             var texto = msg.data.texto || "ATENCIÓN NORMAL";
@@ -127,6 +127,7 @@
             var claseAlerta = "alerta-normal";
             var tipoLuz = "normal";
 
+            // Clasificación de la alerta
             if (texto.includes("ENCARGADO")) { 
                 claseAlerta = "alerta-encargado"; 
                 sonidoId = "snd-encargado"; 
@@ -141,20 +142,24 @@
                 tipoLuz = "premio";
             }
 
+            // ACTIVAR LUZ FÍSICA
             manejarEfectoLuz(tipoLuz);
 
+            // Sonido
             var audio = document.getElementById(sonidoId);
             if(audio) {
                 audio.currentTime = 0;
                 audio.play().catch(function(e) {});
             }
 
+            // Crear tarjeta en pantalla
             var div = document.createElement('div');
             div.id = idMesa;
             div.className = "tarjeta-mesa " + claseAlerta;
             div.innerHTML = '<p class="tipo-servicio">' + texto + '</p><p class="num-mesa">' + num + '</p>';
             document.getElementById('contenedor-alertas').prepend(div);
 
+            // Auto-eliminar después de 60 segundos
             setTimeout(function() {
                 div.style.opacity = "0";
                 setTimeout(function() { 
