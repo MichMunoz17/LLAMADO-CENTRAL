@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CENTRAL W - MONITOR PRO</title>
+    <title>CENTRAL W - MONITOR PRO (CLOUD)</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; }
@@ -53,14 +53,14 @@
 </head>
 <body>
     <div id="barra-estado">
-        <span><span id="dot-ably" class="status-dot offline"></span> ABLY: <span id="txt-ably">DESCONECTADO</span></span>
-        <span><span id="dot-puente" class="status-dot offline"></span> SCRIPT PYTHON: <span id="txt-puente">BUSCANDO...</span></span>
+        <span><span id="dot-ably" class="status-dot offline"></span> NUBE ABLY: <span id="txt-ably">DESCONECTADO</span></span>
+        <span><span id="dot-puente" class="status-dot offline"></span> SCRIPT (ALERTA_FINAL): <span id="txt-puente">BUSCANDO...</span></span>
     </div>
 
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;" onerror="this.src='https://via.placeholder.com/200?text=CENTRAL+WINGS'">
         <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR</button>
-        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Central Wings - Sistema de Alertas</p>
+        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Modo: Contacto WiFi (alerta_final.py)</p>
     </div>
 
     <div class="header">
@@ -79,6 +79,7 @@
     <button id="btn-test" onclick="probarSistema()">TEST LUZ Y SONIDO</button>
 
     <script>
+        // ESTA IP DEBE COINCIDIR CON LA DE TU SCRIPT alerta_final.py
         const IP_PUENTE = "http://127.0.0.1:8080"; 
         const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         const canal = ably.channels.get('central-alertas');
@@ -99,16 +100,16 @@
         // Verificar el script de Python cada 5 segundos
         async function verificarPuente() {
             try {
-                // Hacemos una petición rápida para ver si la ventana negra de Python responde
+                // Hacemos una petición rápida para ver si alerta_final.py está corriendo
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 2000);
                 
                 await fetch(IP_PUENTE + "/check", { mode: 'no-cors', signal: timeoutId.signal });
                 document.getElementById('dot-puente').className = 'status-dot online';
-                document.getElementById('txt-puente').innerText = 'EN LÍNEA';
+                document.getElementById('txt-puente').innerText = 'SCRIPT EN LÍNEA';
             } catch(e) {
                 document.getElementById('dot-puente').className = 'status-dot offline';
-                document.getElementById('txt-puente').innerText = 'SIN CONEXIÓN LOCAL';
+                document.getElementById('txt-puente').innerText = 'SCRIPT NO DETECTADO';
             }
         }
 
@@ -121,7 +122,7 @@
                     a.pause();
                     a.currentTime = 0;
                     a.muted = false;
-                }).catch(e => console.log("Audio prep failed", e));
+                }).catch(e => console.log("Falla al despertar audio", e));
             });
 
             document.getElementById('capa-inicio').style.display = 'none';
@@ -131,21 +132,23 @@
 
         async function enviarSenalLuz(estado) {
             if (!monitorActivado) return;
-            console.log("Comando a Python: " + (estado === 1 ? "PRENDER" : "APAGAR"));
+            console.log("Comando a Tuya Cloud: " + (estado === 1 ? "ENCENDER" : "APAGAR"));
             try {
-                // El monitor envía /?1 o /?0
+                // IMPORTANTE: alerta_final.py espera /?1 o /?0
                 await fetch(IP_PUENTE + "/?" + estado, { mode: 'no-cors' });
             } catch (e) { 
-                console.error("No se pudo contactar con el script de Python."); 
+                console.error("No se pudo contactar con alerta_final.py. ¿Está abierta la ventana?"); 
             }
         }
 
         function manejarEfectoLuz(tipo) {
+            // El contacto WiFi solo tiene On/Off, así que jugamos con los tiempos
             if (tipo === 'normal' || tipo === 'premio') {
                 enviarSenalLuz(1);
-                setTimeout(() => { enviarSenalLuz(0); }, 8000);
+                setTimeout(() => { enviarSenalLuz(0); }, 8000); // Se queda prendido 8 segundos
             } 
             else if (tipo === 'encargado' || tipo === 'escribiendo') {
+                // Efecto de parpadeo para urgencias
                 let ciclos = 0;
                 let intervalo = setInterval(() => {
                     enviarSenalLuz(1);
@@ -158,7 +161,7 @@
 
         canal.subscribe('aviso', (msg) => {
             if (!monitorActivado) return;
-            console.log("Alerta recibida:", msg.data);
+            console.log("Alerta de Ably:", msg.data);
             
             let mesa = msg.data.mesa;
             let t_etiqueta = msg.data.t;
@@ -170,19 +173,19 @@
                     let fechaEtiqueta = new Date(t_iso);
                     let diffSegundos = Math.floor((ahora - fechaEtiqueta) / 1000);
                     
-                    // Filtro de frescura: 5 minutos máximo
+                    // Filtro de frescura: 5 minutos máximo para que no se pierda nada
                     if (Math.abs(diffSegundos) > 300) {
-                        console.warn("Ignorando alerta vieja de " + diffSegundos + " segundos.");
+                        console.warn("Alerta descartada por vieja (" + diffSegundos + "s)");
                         return; 
                     }
 
                     let idUnico = mesa + "_" + t_etiqueta;
                     if (historialRecientes[idUnico]) return;
                     historialRecientes[idUnico] = true;
-                } catch (e) { console.error("Error validando tiempo", e); }
+                } catch (e) { console.error("Error en tiempo etiqueta", e); }
             }
 
-            let texto = (msg.data.texto || "ATENCIÓN").replace(/Mesa \d+:/gi, "").trim();
+            let texto = (msg.data.texto || "SOLICITA ATENCIÓN").replace(/Mesa \d+:/gi, "").trim();
             crearAlerta(mesa, texto);
         });
 
@@ -196,6 +199,7 @@
             let claseAlerta = "alerta-normal";
             let tipoLuz = "normal";
 
+            // Clasificar por texto
             if (texto.includes("ENCARGADO")) { 
                 claseAlerta = "alerta-encargado"; 
                 sonidoId = "snd-encargado"; 
@@ -210,24 +214,24 @@
                 tipoLuz = "premio";
             }
 
-            // Disparar luz física
+            // Manda la señal al puente de Python
             manejarEfectoLuz(tipoLuz);
 
-            // Disparar sonido
+            // Tocar sonido
             let audio = document.getElementById(sonidoId);
             if(audio) {
                 audio.currentTime = 0;
-                audio.play().catch(e => console.log("Error play", e));
+                audio.play().catch(e => console.log("Audio block", e));
             }
 
-            // Crear tarjeta visual
+            // Crear tarjeta en monitor
             let div = document.createElement('div');
             div.id = idMesa;
             div.className = "tarjeta-mesa " + claseAlerta;
             div.innerHTML = '<p class="tipo-servicio">' + texto + '</p><p class="num-mesa">' + num + '</p>';
             document.getElementById('contenedor-alertas').prepend(div);
 
-            // Desaparecer después de un minuto
+            // Se borra sola tras 1 minuto
             setTimeout(() => {
                 div.style.opacity = "0";
                 setTimeout(() => { 
@@ -241,10 +245,10 @@
 
         function probarSistema() {
             if(!monitorActivado) {
-                alert("Primero haz clic en ACTIVAR MONITOR");
+                alert("Primero pícale a ACTIVAR MONITOR, carnal");
                 return;
             }
-            crearAlerta("TEST", "PRUEBA DE CONEXIÓN");
+            crearAlerta("TEST", "PRUEBA DE ALERTA FINAL");
         }
     </script>
 </body>
