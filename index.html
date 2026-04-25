@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KWGZMGX8QK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+     
+      const urlParams = new URLSearchParams(window.location.search);
+      const mesaDetectada = urlParams.get('m') || '0';
+
+      gtag('config', 'G-KWGZMGX8QK', {
+        'mesa_nfc': mesaDetectada
+      });
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -88,6 +103,12 @@
             if (esRecarga || (ultimaAlerta && (ahora - ultimaAlerta < 240000))) {
                 mostrar(true);
             } else {
+                
+                gtag('event', 'solicitud_atencion', {
+                    'numero_mesa': m,
+                    'tipo': 'NFC_Fresco'
+                });
+
                 var bot = "8746666236:AAHNWL6-BNiYrw7jlf3-iwX_uK7xlosoAvo";
                 var cid = "-5149661099";
                 var ablyKey = "XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo";
