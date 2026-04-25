@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-KWGZMGX8QK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Captura inicial de la mesa
+      const urlParams = new URLSearchParams(window.location.search);
+      const mesaDetectada = urlParams.get('m') || '0';
+
+      gtag('config', 'G-KWGZMGX8QK', {
+        'mesa_nfc': mesaDetectada
+      });
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -142,6 +157,12 @@
                     mostrarYaAtendido("SOLICITUD EN CURSO");
                     return;
                 }
+
+                // REGISTRO EN GOOGLE ANALYTICS
+                gtag('event', 'interaccion_experiencia', {
+                    'numero_mesa': m,
+                    'tipo_accion': tipo
+                });
 
                 document.getElementById('seccion-inicio').style.display = 'none';
                 document.getElementById('seccion-queja').style.display = 'none';
