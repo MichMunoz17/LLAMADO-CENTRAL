@@ -3,147 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CENTRAL WINGS - MONITOR ULTIMATE</title>
+    <title>CENTRAL W - MONITOR FIX</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
-        :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; --azul: #00bfff; }
+        :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; }
         body { background-color: #000; color: #fff; font-family: 'Arial Black', sans-serif; margin: 0; overflow: hidden; text-align: center; }
-        
-        #barra-estado { 
-            background: #111; padding: 8px; font-size: 0.75rem; border-bottom: 1px solid #333; 
-            display: flex; justify-content: space-around; font-family: sans-serif;
-        }
+        #barra-estado { background: #111; padding: 8px; font-size: 0.75rem; border-bottom: 1px solid #333; display: flex; justify-content: space-around; }
         .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
         .online { background-color: var(--verde); box-shadow: 0 0 10px var(--verde); }
         .offline { background-color: var(--rojo); }
-
         .header { padding: 15px; border-bottom: 2px solid var(--verde); display: flex; align-items: center; justify-content: center; background: #111; }
         .logo-small { height: 50px; margin-right: 20px; }
-        
         #capa-inicio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         #btn-activar { background: var(--verde); border: none; color: #000; padding: 30px 60px; border-radius: 15px; cursor: pointer; font-family: 'Arial Black', sans-serif; font-size: 1.8rem; box-shadow: 0 0 40px var(--verde); }
-        
         #contenedor-alertas { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; gap: 20px; }
-        .tarjeta-mesa { background: #000; border-radius: 25px; width: 280px; padding: 20px; display: flex; flex-direction: column; justify-content: center; transition: opacity 0.5s; }
-        
+        .tarjeta-mesa { background: #000; border-radius: 25px; width: 280px; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
         .alerta-normal { border: 6px solid var(--verde); animation: flash-verde 1s infinite alternate; }
         .alerta-premio { border: 6px solid var(--amarillo); animation: flash-amarillo 1.5s infinite alternate; }
-        .alerta-escribiendo { border: 6px solid var(--naranja); animation: flash-naranja 0.8s infinite alternate; }
         .alerta-encargado { border: 8px solid var(--rojo); animation: flash-rojo 0.4s infinite alternate; }
-        
         @keyframes flash-verde { from { box-shadow: 0 0 10px var(--verde); } to { box-shadow: 0 0 40px var(--verde); } }
         @keyframes flash-amarillo { from { box-shadow: 0 0 10px var(--amarillo); } to { box-shadow: 0 0 40px var(--amarillo); } }
-        @keyframes flash-naranja { from { box-shadow: 0 0 10px var(--naranja); } to { box-shadow: 0 0 50px var(--naranja); } }
         @keyframes flash-rojo { from { box-shadow: 0 0 10px var(--rojo); } to { box-shadow: 0 0 70px var(--rojo); } }
-        
         .num-mesa { font-size: 7.5rem; color: #fff; margin: 0; line-height: 1; }
-        .tipo-servicio { font-size: 1.1rem; margin: 10px 0; letter-spacing: -1px; text-transform: uppercase; color: #fff; }
+        .tipo-servicio { font-size: 1.1rem; margin: 10px 0; text-transform: uppercase; }
         #no-hay { font-size: 2rem; color: #222; margin-top: 150px; }
-
-        #debug-log { 
-            position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); 
-            color: var(--azul); font-family: monospace; font-size: 0.7rem; text-align: left; 
-            padding: 8px; max-height: 80px; overflow-y: auto; border-top: 1px solid #333;
-        }
-        #btn-test { position: fixed; bottom: 90px; right: 10px; background: #222; color: #555; border: 1px solid #333; padding: 8px; font-size: 0.7rem; cursor: pointer; border-radius: 5px; }
+        #debug-log { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.9); color: #00bfff; font-family: monospace; font-size: 0.7rem; text-align: left; padding: 8px; max-height: 80px; overflow-y: auto; }
     </style>
 </head>
 <body>
     <div id="barra-estado">
-        <span><span id="dot-ably" class="status-dot offline"></span> NUBE CENTRAL: <span id="txt-ably">CONECTANDO...</span></span>
-        <span><span id="dot-puente" class="status-dot offline"></span> SCRIPT LOCAL: <span id="txt-puente">BUSCANDO...</span></span>
+        <span><span id="dot-ably" class="status-dot offline"></span> NUBE: <span id="txt-ably">CONECTANDO...</span></span>
+        <span><span id="dot-puente" class="status-dot offline"></span> SCRIPT: <span id="txt-puente">BUSCANDO...</span></span>
     </div>
-
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;" onerror="this.src='https://via.placeholder.com/200?text=CENTRAL+WINGS'">
-        <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR CENTRAL WINGS</button>
-        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Modo: Compatible con Windows 7</p>
+        <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR FINAL</button>
     </div>
-
     <div class="header">
         <img src="central-blanco.png" class="logo-small" onerror="this.style.display='none'">
         <h1>ALERTAS CENTRAL WINGS</h1>
     </div>
-
-    <div id="no-hay">ESPERANDO ACTIVIDAD...</div>
+    <div id="no-hay">ESPERANDO ESCANEOS...</div>
     <div id="contenedor-alertas"></div>
-    <div id="debug-log">Monitor listo para iniciar...</div>
+    <div id="debug-log">Monitor listo...</div>
 
     <audio id="snd-normal" src="normal.mp3" preload="auto"></audio> 
     <audio id="snd-premio" src="premio.mp3" preload="auto"></audio> 
-    <audio id="snd-escribiendo" src="escribiendo.mp3" preload="auto"></audio> 
     <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio> 
 
-    <button id="btn-test" onclick="probarSistema()">PRUEBA DE LUZ</button>
-
     <script>
-        // Usamos sintaxis clásica de JavaScript para máxima compatibilidad
         var IP_PUENTE = "http://127.0.0.1:8080"; 
         var ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
         var canal = ably.channels.get('central-alertas');
         var historialRecientes = {}; 
         var monitorActivado = false;
-        var listoParaAlertas = false; // El "Escudo de Arranque"
+        var listoParaAlertas = false;
 
         function addLog(msg) {
             var logDiv = document.getElementById('debug-log');
-            var time = new Date().toLocaleTimeString();
-            logDiv.innerHTML = "<div>[" + time + "] " + msg + "</div>" + logDiv.innerHTML;
+            logDiv.innerHTML = "<div>[" + new Date().toLocaleTimeString() + "] " + msg + "</div>" + logDiv.innerHTML;
         }
 
         ably.connection.on('connected', function() {
             document.getElementById('dot-ably').className = 'status-dot online';
             document.getElementById('txt-ably').innerText = 'CONECTADO';
-            addLog("Conexión con Ably exitosa.");
         });
 
         function verificarPuente() {
-            // Usamos una técnica de imagen para checar el servidor sin errores de CORS
-            var img = new Image();
-            img.onload = function() {
-                document.getElementById('dot-puente').className = 'status-dot online';
-                document.getElementById('txt-puente').innerText = 'SCRIPT ACTIVO';
+            // Usamos un metodo que no mande numeros extraños en la URL
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", IP_PUENTE + "/check_status", true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) {
+                    document.getElementById('dot-puente').className = 'status-dot online';
+                    document.getElementById('txt-puente').innerText = 'SCRIPT ACTIVO';
+                }
             };
-            img.onerror = function() {
-                // Como es una petición HTTP a un script, el error es normal pero confirma que el puerto responde
-                document.getElementById('dot-puente').className = 'status-dot online';
-                document.getElementById('txt-puente').innerText = 'SCRIPT ACTIVO';
-            };
-            img.src = IP_PUENTE + "/check?" + new Date().getTime();
+            xhr.send();
         }
 
         function iniciarMonitor() {
             monitorActivado = true;
-            // Desbloqueo de audio
             var sonidos = document.querySelectorAll('audio');
             for(var i=0; i<sonidos.length; i++) {
-                sonidos[i].muted = true;
-                sonidos[i].play();
-                sonidos[i].pause();
-                sonidos[i].currentTime = 0;
-                sonidos[i].muted = false;
+                sonidos[i].muted = true; sonidos[i].play(); sonidos[i].pause(); sonidos[i].currentTime = 0; sonidos[i].muted = false;
             }
-
             document.getElementById('capa-inicio').style.display = 'none';
-            addLog("Sistema activado. Cargando...");
-            
-            // ESCUDO DE ARRANQUE: Esperamos 2 segundos antes de dejar pasar alertas
-            // Esto ignora todo el historial viejo que Ably manda al conectar
-            setTimeout(function() {
-                listoParaAlertas = true;
-                addLog("Escudo de arranque desactivado. Escuchando alertas frescas.");
-            }, 2000);
-
+            setTimeout(function() { 
+                listoParaAlertas = true; 
+                addLog("Escudo desactivado. Escuchando...");
+            }, 3000);
             verificarPuente();
-            setInterval(verificarPuente, 10000);
+            setInterval(verificarPuente, 15000);
         }
 
         function enviarSenalLuz(estado) {
             if (!monitorActivado) return;
-            addLog("Enviando comando de luz: " + estado);
-            
-            // Usamos una petición simple compatible con todos los navegadores
             var xhr = new XMLHttpRequest();
+            // Ruta exacta /?1 o /?0
             xhr.open("GET", IP_PUENTE + "/?" + estado, true);
             xhr.send();
         }
@@ -152,7 +109,7 @@
             if (tipo === 'normal' || tipo === 'premio') {
                 enviarSenalLuz(1);
                 setTimeout(function() { enviarSenalLuz(0); }, 8000);
-            } else if (tipo === 'encargado' || tipo === 'escribiendo') {
+            } else if (tipo === 'encargado') {
                 var ciclos = 0;
                 var intervalo = setInterval(function() {
                     enviarSenalLuz(1);
@@ -163,20 +120,14 @@
             }
         }
 
-        // --- RECEPTOR POR IDENTIDAD (SIN FILTROS DE RELOJ) ---
         canal.subscribe(function(msg) {
             if (!monitorActivado || !listoParaAlertas) return;
-            
             var datos = msg.data;
             var mesa = datos.mesa || "??";
-            var t_stamp = datos.t || "sin-tiempo";
+            var t_stamp = datos.t || "0";
             var idUnico = mesa + "_" + t_stamp;
 
-            // Filtro de duplicados (Evita que el mismo escaneo suene dos veces)
-            if (historialRecientes[idUnico]) {
-                addLog("Escaneo de Mesa " + mesa + " ya procesado.");
-                return;
-            }
+            if (historialRecientes[idUnico]) return;
             historialRecientes[idUnico] = true;
 
             var texto = (datos.texto || "ATENCION").replace(/Mesa \d+:/gi, "").trim();
@@ -184,7 +135,7 @@
         });
 
         function crearAlerta(num, texto) {
-            addLog("NUEVA ALERTA: Mesa " + num);
+            addLog("Mesa " + num + " solicitando servicio.");
             document.getElementById('no-hay').style.display = 'none';
             var idDiv = "mesa-" + num;
             var vieja = document.getElementById(idDiv);
@@ -196,20 +147,14 @@
 
             if (texto.includes("ENCARGADO")) { 
                 claseAlerta = "alerta-encargado"; sonidoId = "snd-encargado"; tipoLuz = "encargado"; 
-            } else if (texto.includes("ESCRIBIENDO")) { 
-                claseAlerta = "alerta-escribiendo"; sonidoId = "snd-escribiendo"; tipoLuz = "escribiendo"; 
             } else if (texto.includes("PREMIO")) { 
                 claseAlerta = "alerta-premio"; sonidoId = "snd-premio"; tipoLuz = "premio"; 
             }
 
-            // Manda la orden al contacto físico
             manejarEfectoLuz(tipoLuz);
-
-            // Toca el sonido
             var audio = document.getElementById(sonidoId);
             if(audio) { audio.currentTime = 0; audio.play().catch(function(e){}); }
 
-            // Crea la tarjeta visual
             var div = document.createElement('div');
             div.id = idDiv;
             div.className = "tarjeta-mesa " + claseAlerta;
@@ -220,16 +165,9 @@
                 div.style.opacity = "0";
                 setTimeout(function() { 
                     if(div.parentNode) div.remove(); 
-                    if (document.getElementById('contenedor-alertas').children.length === 0) {
-                        document.getElementById('no-hay').style.display = 'block'; 
-                    }
+                    if (document.getElementById('contenedor-alertas').children.length == 0) document.getElementById('no-hay').style.display = 'block'; 
                 }, 1000);
             }, 60000); 
-        }
-
-        function probarSistema() {
-            if(!monitorActivado) return;
-            crearAlerta("TEST", "PRUEBA CENTRAL WINGS");
         }
     </script>
 </body>
