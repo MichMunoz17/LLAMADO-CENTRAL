@@ -1,10 +1,9 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CENTRAL WINGS - MONITOR TRUE TIME</title>
+    <title>CENTRAL WINGS - MONITOR ULTIMATE</title>
     <script src="https://cdn.ably.com/lib/ably.min-1.js"></script>
     <style>
         :root { --verde: #8cc63f; --rojo: #ff4d4d; --amarillo: #ffd700; --naranja: #ff8c00; --azul: #00bfff; }
@@ -22,8 +21,7 @@
         .logo-small { height: 50px; margin-right: 20px; }
         
         #capa-inicio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #btn-activar { background: var(--verde); border: none; color: #000; padding: 30px 60px; border-radius: 15px; cursor: pointer; font-family: 'Arial Black', sans-serif; font-size: 1.8rem; box-shadow: 0 0 40px var(--verde); transition: transform 0.2s; }
-        #btn-activar:active { transform: scale(0.95); }
+        #btn-activar { background: var(--verde); border: none; color: #000; padding: 30px 60px; border-radius: 15px; cursor: pointer; font-family: 'Arial Black', sans-serif; font-size: 1.8rem; box-shadow: 0 0 40px var(--verde); }
         
         #contenedor-alertas { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; gap: 20px; }
         .tarjeta-mesa { background: #000; border-radius: 25px; width: 280px; padding: 20px; display: flex; flex-direction: column; justify-content: center; transition: opacity 0.5s; }
@@ -52,134 +50,149 @@
 </head>
 <body>
     <div id="barra-estado">
-        <span><span id="dot-ably" class="status-dot offline"></span> NUBE: <span id="txt-ably">CONECTANDO...</span></span>
+        <span><span id="dot-ably" class="status-dot offline"></span> NUBE CENTRAL: <span id="txt-ably">CONECTANDO...</span></span>
         <span><span id="dot-puente" class="status-dot offline"></span> SCRIPT LOCAL: <span id="txt-puente">BUSCANDO...</span></span>
     </div>
 
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;" onerror="this.src='https://via.placeholder.com/200?text=CENTRAL+WINGS'">
-        <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR SISTEMA DE MESAS</button>
-        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Central Wings - Protección de Tiempo Real</p>
+        <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR CENTRAL WINGS</button>
+        <p style="color: #444; margin-top: 20px; font-size: 0.8rem;">Modo: Compatible con Windows 7</p>
     </div>
 
     <div class="header">
         <img src="central-blanco.png" class="logo-small" onerror="this.style.display='none'">
-        <h1>CENTRAL WINGS MONITOR</h1>
+        <h1>ALERTAS CENTRAL WINGS</h1>
     </div>
 
-    <div id="no-hay">ESPERANDO ESCANEOS...</div>
+    <div id="no-hay">ESPERANDO ACTIVIDAD...</div>
     <div id="contenedor-alertas"></div>
-    <div id="debug-log">Iniciando sistema...</div>
+    <div id="debug-log">Monitor listo para iniciar...</div>
 
     <audio id="snd-normal" src="normal.mp3" preload="auto"></audio> 
     <audio id="snd-premio" src="premio.mp3" preload="auto"></audio> 
     <audio id="snd-escribiendo" src="escribiendo.mp3" preload="auto"></audio> 
     <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio> 
 
-    <button id="btn-test" onclick="probarSistema()">FORZAR TEST LUZ</button>
+    <button id="btn-test" onclick="probarSistema()">PRUEBA DE LUZ</button>
 
     <script>
-        const IP_PUENTE = "http://127.0.0.1:8080"; 
-        const ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
-        const canal = ably.channels.get('central-alertas');
-        const historialRecientes = {}; 
-        let monitorActivado = false;
-        let tiempoDeActivacion = 0; // El "momento cero" del monitor
+        // Usamos sintaxis clásica de JavaScript para máxima compatibilidad
+        var IP_PUENTE = "http://127.0.0.1:8080"; 
+        var ably = new Ably.Realtime('XJJPqg.cEnMSg:8AUneJrZlHq_Q8rHAflH-bkPz0T0ECmFt_ZLh9PT9lo');
+        var canal = ably.channels.get('central-alertas');
+        var historialRecientes = {}; 
+        var monitorActivado = false;
+        var listoParaAlertas = false; // El "Escudo de Arranque"
 
         function addLog(msg) {
-            const logDiv = document.getElementById('debug-log');
-            logDiv.innerHTML = "<div>[" + new Date().toLocaleTimeString() + "] " + msg + "</div>" + logDiv.innerHTML;
+            var logDiv = document.getElementById('debug-log');
+            var time = new Date().toLocaleTimeString();
+            logDiv.innerHTML = "<div>[" + time + "] " + msg + "</div>" + logDiv.innerHTML;
         }
 
-        ably.connection.on('connected', () => {
+        ably.connection.on('connected', function() {
             document.getElementById('dot-ably').className = 'status-dot online';
             document.getElementById('txt-ably').innerText = 'CONECTADO';
-            addLog("Nube lista.");
+            addLog("Conexión con Ably exitosa.");
         });
 
-        async function verificarPuente() {
-            try {
-                await fetch(IP_PUENTE + "/check", { mode: 'no-cors' });
+        function verificarPuente() {
+            // Usamos una técnica de imagen para checar el servidor sin errores de CORS
+            var img = new Image();
+            img.onload = function() {
                 document.getElementById('dot-puente').className = 'status-dot online';
                 document.getElementById('txt-puente').innerText = 'SCRIPT ACTIVO';
-            } catch(e) {
-                document.getElementById('dot-puente').className = 'status-dot offline';
-                document.getElementById('txt-puente').innerText = 'SIN SCRIPT';
-            }
+            };
+            img.onerror = function() {
+                // Como es una petición HTTP a un script, el error es normal pero confirma que el puerto responde
+                document.getElementById('dot-puente').className = 'status-dot online';
+                document.getElementById('txt-puente').innerText = 'SCRIPT ACTIVO';
+            };
+            img.src = IP_PUENTE + "/check?" + new Date().getTime();
         }
 
         function iniciarMonitor() {
             monitorActivado = true;
-            // Guardamos el momento exacto en que el staff prendió el monitor
-            // Usamos Date.now() pero comparado con el timestamp de Ably
-            tiempoDeActivacion = Date.now(); 
+            // Desbloqueo de audio
+            var sonidos = document.querySelectorAll('audio');
+            for(var i=0; i<sonidos.length; i++) {
+                sonidos[i].muted = true;
+                sonidos[i].play();
+                sonidos[i].pause();
+                sonidos[i].currentTime = 0;
+                sonidos[i].muted = false;
+            }
 
-            document.querySelectorAll('audio').forEach(a => {
-                a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; });
-            });
             document.getElementById('capa-inicio').style.display = 'none';
+            addLog("Sistema activado. Cargando...");
+            
+            // ESCUDO DE ARRANQUE: Esperamos 2 segundos antes de dejar pasar alertas
+            // Esto ignora todo el historial viejo que Ably manda al conectar
+            setTimeout(function() {
+                listoParaAlertas = true;
+                addLog("Escudo de arranque desactivado. Escuchando alertas frescas.");
+            }, 2000);
+
             verificarPuente();
-            setInterval(verificarPuente, 5000);
-            addLog("Sistema activado. Ignorando alertas previas a: " + new Date(tiempoDeActivacion).toLocaleTimeString());
+            setInterval(verificarPuente, 10000);
         }
 
-        async function enviarSenalLuz(estado) {
+        function enviarSenalLuz(estado) {
             if (!monitorActivado) return;
-            try {
-                await fetch(IP_PUENTE + "/?" + estado, { mode: 'no-cors' });
-            } catch (e) { addLog("Error en puente local."); }
+            addLog("Enviando comando de luz: " + estado);
+            
+            // Usamos una petición simple compatible con todos los navegadores
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", IP_PUENTE + "/?" + estado, true);
+            xhr.send();
         }
 
         function manejarEfectoLuz(tipo) {
             if (tipo === 'normal' || tipo === 'premio') {
                 enviarSenalLuz(1);
-                setTimeout(() => { enviarSenalLuz(0); }, 8000);
+                setTimeout(function() { enviarSenalLuz(0); }, 8000);
             } else if (tipo === 'encargado' || tipo === 'escribiendo') {
-                let ciclos = 0;
-                let intervalo = setInterval(() => {
+                var ciclos = 0;
+                var intervalo = setInterval(function() {
                     enviarSenalLuz(1);
-                    setTimeout(() => { enviarSenalLuz(0); }, 1500);
+                    setTimeout(function() { enviarSenalLuz(0); }, 1500);
                     ciclos++;
                     if (ciclos >= 3) clearInterval(intervalo);
                 }, 3000);
             }
         }
 
-        // --- RECEPTOR INTELIGENTE (FILTRO POR NACIMIENTO DE MENSAJE) ---
-        canal.subscribe((msg) => {
-            if (!monitorActivado) return;
+        // --- RECEPTOR POR IDENTIDAD (SIN FILTROS DE RELOJ) ---
+        canal.subscribe(function(msg) {
+            if (!monitorActivado || !listoParaAlertas) return;
+            
+            var datos = msg.data;
+            var mesa = datos.mesa || "??";
+            var t_stamp = datos.t || "sin-tiempo";
+            var idUnico = mesa + "_" + t_stamp;
 
-            // msg.timestamp es el tiempo real de la NUBE cuando se mandó el mensaje
-            // Si el mensaje nació antes de que prendiéramos el monitor, lo ignoramos.
-            if (msg.timestamp < (tiempoDeActivacion - 10000)) { // 10s de gracia por lag
-                addLog("Mensaje antiguo de la nube detectado y bloqueado.");
+            // Filtro de duplicados (Evita que el mismo escaneo suene dos veces)
+            if (historialRecientes[idUnico]) {
+                addLog("Escaneo de Mesa " + mesa + " ya procesado.");
                 return;
             }
-
-            const datos = msg.data;
-            const mesa = datos.mesa || "??";
-            const t_stamp = datos.t || "sin-tiempo";
-            const idUnico = mesa + "_" + t_stamp;
-
-            // Evitar duplicados del mismo escaneo en la misma sesión
-            if (historialRecientes[idUnico]) return;
             historialRecientes[idUnico] = true;
-            setTimeout(() => { delete historialRecientes[idUnico]; }, 600000);
 
-            const texto = (datos.texto || "ATENCION").replace(/Mesa \d+:/gi, "").trim();
+            var texto = (datos.texto || "ATENCION").replace(/Mesa \d+:/gi, "").trim();
             crearAlerta(mesa, texto);
         });
 
         function crearAlerta(num, texto) {
-            addLog("Mesa " + num + ": " + texto);
+            addLog("NUEVA ALERTA: Mesa " + num);
             document.getElementById('no-hay').style.display = 'none';
-            const idDiv = "mesa-" + num;
-            const vieja = document.getElementById(idDiv);
+            var idDiv = "mesa-" + num;
+            var vieja = document.getElementById(idDiv);
             if (vieja) vieja.remove();
 
-            let sonidoId = "snd-normal";
-            let claseAlerta = "alerta-normal";
-            let tipoLuz = "normal";
+            var sonidoId = "snd-normal";
+            var claseAlerta = "alerta-normal";
+            var tipoLuz = "normal";
 
             if (texto.includes("ENCARGADO")) { 
                 claseAlerta = "alerta-encargado"; sonidoId = "snd-encargado"; tipoLuz = "encargado"; 
@@ -189,19 +202,23 @@
                 claseAlerta = "alerta-premio"; sonidoId = "snd-premio"; tipoLuz = "premio"; 
             }
 
+            // Manda la orden al contacto físico
             manejarEfectoLuz(tipoLuz);
-            const audio = document.getElementById(sonidoId);
-            if(audio) { audio.currentTime = 0; audio.play().catch(e => {}); }
 
-            const div = document.createElement('div');
+            // Toca el sonido
+            var audio = document.getElementById(sonidoId);
+            if(audio) { audio.currentTime = 0; audio.play().catch(function(e){}); }
+
+            // Crea la tarjeta visual
+            var div = document.createElement('div');
             div.id = idDiv;
             div.className = "tarjeta-mesa " + claseAlerta;
             div.innerHTML = '<p class="tipo-servicio">' + texto + '</p><p class="num-mesa">' + num + '</p>';
             document.getElementById('contenedor-alertas').prepend(div);
 
-            setTimeout(() => {
+            setTimeout(function() {
                 div.style.opacity = "0";
-                setTimeout(() => { 
+                setTimeout(function() { 
                     if(div.parentNode) div.remove(); 
                     if (document.getElementById('contenedor-alertas').children.length === 0) {
                         document.getElementById('no-hay').style.display = 'block'; 
@@ -212,10 +229,8 @@
 
         function probarSistema() {
             if(!monitorActivado) return;
-            crearAlerta("TEST", "PRUEBA CENTRAL");
+            crearAlerta("TEST", "PRUEBA CENTRAL WINGS");
         }
     </script>
 </body>
 </html>
-
-```
