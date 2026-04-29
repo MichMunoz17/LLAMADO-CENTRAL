@@ -21,9 +21,11 @@
         .alerta-normal { border: 6px solid var(--verde); animation: flash-verde 1s infinite alternate; }
         .alerta-premio { border: 6px solid var(--amarillo); animation: flash-amarillo 1.5s infinite alternate; }
         .alerta-encargado { border: 8px solid var(--rojo); animation: flash-rojo 0.4s infinite alternate; }
+        .alerta-escribiendo { border: 8px solid var(--naranja); animation: flash-naranja 0.7s infinite alternate; }
         @keyframes flash-verde { from { box-shadow: 0 0 10px var(--verde); } to { box-shadow: 0 0 40px var(--verde); } }
         @keyframes flash-amarillo { from { box-shadow: 0 0 10px var(--amarillo); } to { box-shadow: 0 0 40px var(--amarillo); } }
         @keyframes flash-rojo { from { box-shadow: 0 0 10px var(--rojo); } to { box-shadow: 0 0 70px var(--rojo); } }
+        @keyframes flash-naranja { from { box-shadow: 0 0 10px var(--naranja); to { box-shadow: 0 0 70px var(--naranja); } }
         .num-mesa { font-size: 7.5rem; color: #fff; margin: 0; line-height: 1; }
         .tipo-servicio { font-size: 1.1rem; margin: 10px 0; text-transform: uppercase; }
         #no-hay { font-size: 2rem; color: #222; margin-top: 150px; }
@@ -37,7 +39,7 @@
     </div>
     <div id="capa-inicio">
         <img src="central-blanco.png" style="width: 200px; margin-bottom: 30px;" onerror="this.src='https://via.placeholder.com/200?text=CENTRAL+WINGS'">
-        <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR FINAL</button>
+        <button id="btn-activar" onclick="iniciarMonitor()">🔊 ACTIVAR MONITOR ALERTAS</button>
     </div>
     <div class="header">
         <img src="central-blanco.png" class="logo-small" onerror="this.style.display='none'">
@@ -45,11 +47,12 @@
     </div>
     <div id="no-hay">ESPERANDO ESCANEOS...</div>
     <div id="contenedor-alertas"></div>
-    <div id="debug-log">Monitor listo...</div>
+    <div id="debug-log">MONITOR LISTO...</div>
 
     <audio id="snd-normal" src="normal.mp3" preload="auto"></audio> 
     <audio id="snd-premio" src="premio.mp3" preload="auto"></audio> 
-    <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio> 
+    <audio id="snd-encargado" src="urgente.mp3" preload="auto"></audio>
+    <audio id="snd-escribiendo" src="escribiendo.mp3" preload="auto"></audio>
 
     <script>
         var IP_PUENTE = "http://127.0.0.1:8080"; 
@@ -109,7 +112,7 @@
             if (tipo === 'normal' || tipo === 'premio') {
                 enviarSenalLuz(1);
                 setTimeout(function() { enviarSenalLuz(0); }, 8000);
-            } else if (tipo === 'encargado') {
+            } else if (tipo === 'encargado' || tipo === 'escribiendo') {
                 var ciclos = 0;
                 var intervalo = setInterval(function() {
                     enviarSenalLuz(1);
@@ -147,7 +150,9 @@
 
             if (texto.includes("ENCARGADO")) { 
                 claseAlerta = "alerta-encargado"; sonidoId = "snd-encargado"; tipoLuz = "encargado"; 
-            } else if (texto.includes("PREMIO")) { 
+            } else if (texto.includes("ESCRITO"))
+                claseAlerta = "alerta-escribiendo"; sonidoId = "snd-escribiendo"; tipoLuz = "escribiendo";
+            } else if (texto.includes("BENEFICIO")) { 
                 claseAlerta = "alerta-premio"; sonidoId = "snd-premio"; tipoLuz = "premio"; 
             }
 
