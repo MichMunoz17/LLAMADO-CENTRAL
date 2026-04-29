@@ -85,7 +85,7 @@
     <div id="seccion-queja" class="btn-container">
         <p class="pregunta" style="font-size: 1rem;">¿CÓMO PREFIERES RESOLVERLO?</p>
         <button onclick="enviar('ENCARGADO')" class="btn btn-encargado">👨‍💼 HABLAR CON ENCARGADO</button>
-        <button onclick="enviar('ESCRITO')" class="btn btn-escrito">📝 PREFIERO ESCRIBIRLO</button>
+        <button onclick="enviar('ESCRITO')" class="btn btn-escrito">📝 PREFIERO ESCRIBIRLE</button>
         <button onclick="location.reload()" style="background:none; border:none; color:#555; cursor:pointer; font-family:sans-serif; margin-top:10px; font-size: 0.8rem;">← Volver</button>
     </div>
 
@@ -176,14 +176,14 @@
 
                 if(tipo === 'BENEFICIO') {
                     msgTlg = "🎉 MESA " + m + ": ¡Escaneo por un beneficio!";
-                    msgMon = "Mesa " + m + ": ¡SOLICITARÁ PREMIO! 🎁";
+                    msgMon = "Mesa " + m + ": ¡SOLICITARÁ BENEFICIO! 🎁";
                     destino = formUrl;
                 } else if(tipo === 'ENCARGADO') {
                     msgTlg = "⚠️ MESA " + m + ": ¡SOLICITA AL ENCARGADO!";
                     msgMon = "Mesa " + m + ": ¡LLAMAN AL ENCARGADO YA! 👨‍💼";
                     document.getElementById('status-text').innerText = "SOLICITANDO ENCARGADO...";
                 } else if(tipo === 'ESCRITO') {
-                    msgTlg = "📝 MESA " + m + ": Escribirá sugerencia al dueño (WhatsApp).";
+                    msgTlg = "📝 MESA " + m + ": Escribirá queja o sugerencia (WhatsApp).";
                     msgMon = "Mesa " + m + ": ESCRIBIENDO QUEJA O SUG 📝";
                     destino = waUrl;
                 }
